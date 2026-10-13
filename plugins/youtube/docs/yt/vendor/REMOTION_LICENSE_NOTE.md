@@ -1,0 +1,13 @@
+# Remotion — nota di licenza (regola del design §11)
+
+- **Versione in uso**: i pacchetti `@remotion/*` sono fissati in `scripts/yt/remotion/package.json` del plugin (Remotion 4.x). Licenza "Remotion License": gratuita per singoli e per organizzazioni fino a 3 persone; oltre serve la Company License (https://www.remotion.dev/license).
+- **Chi conta**: le persone che lavorano sui progetti Remotion dell'organizzazione. Con i termini di Remotion 5.0 contano anche collaboratori e part-time, e la FAQ somma già oggi collaboratori e cliente quando operano sullo stesso progetto. Ogni persona che installa il plugin e renderizza con Remotion per lo stesso canale o la stessa organizzazione entra nel conteggio.
+- **Regola del plugin**: Remotion si usa solo per i canali con `kind: own` o `kind: personal` e solo quando il profilo dice `graphics_licence.status: confermato` (chi ci lavora resta entro 3 persone, collaboratori compresi, oppure c'è una licenza Company). Finché non è confermato, l'agente usa `graphics_licence.fallback_engine` (HyperFrames).
+- **Clienti**: al cliente si consegnano solo **file finiti** (MP4, PNG, MOV). Per la FAQ ufficiale chi riceve solo l'MP4 non è utente Remotion. Il progetto Remotion, i template e il bundle non si consegnano mai.
+- **Progetti consegnati a clienti** (sorgenti modificabili, template riusabili, grafica che il cliente renderizza da sé): si usa **HyperFrames** (Apache-2.0), non Remotion.
+- `yt-remotion` avvisa quando il brand non è un brand proprio (un canale con profilo `kind: own` o `personal`, oppure un brand con `"own": true` nei token): in quel caso vale la riga sopra.
+- **Telemetria**: Remotion 4.x invia eventi d'uso solo se riceve una chiave di licenza (`--license-key` / `--public-license-key`). Il toolkit non ne passa mai una e imposta `DO_NOT_TRACK=1`.
+- **Browser**: `chrome-headless-shell` scaricato una volta da Remotion in `node_modules/.remotion` (archivio ~171 MB, ~571 MB su disco). Non è un pacchetto npm in più.
+- **Font** in `remotion/public/fonts`: SIL OFL 1.1 (Anton, Inter), con i file OFL accanto. I font dei brand dei canali stanno nella cartella del brand (`fonts/`, con la loro licenza), non nel plugin.
+- **Da ricontrollare**: a ogni aggiornamento major di Remotion (in particolare l'arrivo della 5.0), quando il team che lavora su un canale supera 3 persone (collaboratori inclusi) e prima di ogni uso per un cliente.
+- Fonti: https://github.com/remotion-dev/remotion/blob/main/LICENSE.md , https://www.remotion.dev/docs/license/faq , https://www.remotion.dev/docs/terms (lette il 2026-10-11); design doc `../DESIGN.md` §11.

@@ -1,0 +1,45 @@
+{
+  "_attribution": {
+    "title": "YouTube thumbnail surface geometry",
+    "author": "Engaged Views (engagedviews.com)",
+    "source": "https://engagedviews.com/api/surfaces.json",
+    "provenance": "https://engagedviews.com/sources/",
+    "registry": "com.engagedviews/youtube-thumbnail-sizes v1.1.1 (MCP Registry); repo https://github.com/Jesse-Lucas1996/agentic-business/tree/main/mcp",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Adapted for the YouTube Producer toolkit: the values were transcribed from the published dataset (version 1.1.1) and re-shaped into this structure; the field names are ours, the measurements are theirs. Nothing was added to the measurements. See plugins/youtube/docs/yt/vendor/NOTICE.md."
+  },
+  "dataset_version": "1.1.1",
+  "measured": "2026-08-28",
+  "method": "headless Firefox, logged out, viewports 1280/1600/1920; CSS px at device pixel ratio 1",
+  "units": "CSS px, [width, height] of the box YouTube paints",
+  "surfaces": {
+    "home": {
+      "label": "Home / channel grid",
+      "viewports": {"1280": [347.3, 195.4], "1600": [420.0, 236.3], "1920": [420.0, 236.3]},
+      "title": {"font_px": 16, "max_lines": 2},
+      "measured": true
+    },
+    "search": {
+      "label": "Search results",
+      "viewports": {"1280": [500.0, 280.5], "1600": [500.0, 280.5], "1920": [500.0, 280.5]},
+      "measured": true
+    },
+    "sidebar": {
+      "label": "Watch page sidebar (up next)",
+      "viewports": {"1280": [215.9, 121.4], "1600": [270.9, 152.3], "1920": [325.9, 183.3]},
+      "title": {"font_px": 14, "max_lines": 3},
+      "measured": true
+    },
+    "mobile_feed": {
+      "label": "Mobile feed",
+      "viewports": {"1280": [393.0, 221.0], "1600": [393.0, 221.0], "1920": [393.0, 221.0]},
+      "measured": false,
+      "note": "sourced from the stylesheet, not measured"
+    }
+  },
+  "not_rendered": {
+    "sizes": [[310, 174], [360, 202], [168, 94]],
+    "note": "commonly quoted sizes that are not the box YouTube renders (skeleton CSS or the declared image-file size)"
+  }
+}

@@ -1,0 +1,90 @@
+<!doctype html>
+<!-- ritratto «Il ritratto» (thumbnail v2, telaio di serie; claim, stesso telaio del duo): ospite a destra testa-spalle con il
+     volto al ~40 % dell'altezza (limitato dal tetto al display), corona libera di uscire dal bordo alto, spalle a filo del
+     fondo; a sinistra la frase di 3–6 parole nel font headline del brand (default Anton) con la parola chiave nel box
+     d'accento e il punto finale nell'accento; targhetta nome + ruolo e riga meta in basso a sinistra; wordmark del brand in
+     alto a sinistra; etichetta di formato in alto a destra fuori dalla zona hover (inchiostro se cade sul disco). Campo:
+     inchiostro con grana, oppure la scena scurita (plate). Grade (concept `grade`): natural (default) o mono = livello 2b
+     (stessa curva su persona e plate, yt-thumb-render).
+     Disco dietro la testa (`disc`): false (default), true | "accent" = disco d'accento (un accento nei toni della pelle,
+     rossi e aranci saturi, mai dietro il volto: il disco diventa carta), "paper" = disco carta (stacco dal feed scuro e dai
+     capelli scuri senza un secondo accento). Il disco è «di campo»: grande, tagliato dal bordo alto/destro, può passare
+     sotto le icone hover.
+     guest_style: none di default; graphic = contorno carta + alone d'accento SOTTO il ritaglio.
+     Spec: hook|text, highlight, accent (un accento del brand | auto), people [{role: guest, name, title}], face_frac (default
+     0.40), face_cx, face_cy, disc, disc_k, disc_dx, disc_dy, keyword_style (box|bar|none), meta_line, format_label, show_logo
+     (true | "wordmark" | "symbol" | false; default wordmark), logo_h, wordmark_text, guest_style, plate_src, text_center,
+     grade, hook_font. -->
+<html lang="it"><head><meta charset="utf-8">
+<style>
+  :root { --ink:#15171c; --paper:#f4f1ea; }
+  html, body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #frame { position:relative; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #plate { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; }
+  #light { position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .hero { position:absolute; filter: drop-shadow(0 18px 34px rgba(0,0,0,.38)); }
+</style></head>
+<body><div id="frame"><div id="plate"></div><div id="light"></div></div>
+<!-- window.KIT (_common.js) è iniettato da render_html.mjs prima degli script della pagina -->
+<script>
+TT.ready(async (spec, T) => {
+  const C = KIT.C, rgba = KIT.rgba;
+  const frame = document.getElementById('frame');
+  const accent = KIT.accentName(spec.accent);
+  KIT.useAccent(accent);
+  if (spec.plate_src) {
+    document.getElementById('plate').style.backgroundImage = `url("${spec.plate_src}")`;
+    await new Promise((r) => { const i = new Image(); i.onload = r; i.onerror = r; i.src = spec.plate_src; });
+  }
+  const fcx = (spec.face_cx ?? 0.71) * T.W;
+  document.getElementById('light').style.background =
+    `radial-gradient(42% 70% at ${(fcx / T.W * 100).toFixed(1)}% 40%, ${rgba(C.paper, 0.10)}, ${rgba(C.paper, 0)} 70%),` +
+    `linear-gradient(90deg, ${rgba(C.ink, 0.55)} 0%, ${rgba(C.ink, 0.15)} 45%, ${rgba(C.ink, 0)} 60%)`;
+  KIT.grain(frame, { opacity: 0.12 });
+
+  const people = spec.people || [];
+  const g = people.find((p) => p.role === 'guest') || people[0];
+  if (!g) throw new Error('ritratto: serve l\'ospite (people[0] o role: guest)');
+  const w = KIT.wantFrac(g, spec, 0.40, [0.34, 0.50]);
+  const fr = KIT.capFrac(g, w.frac, spec).frac;
+  const rec = await KIT.person(frame, g, spec, { faceFrac: w.frac, oneToOne: w.oneToOne, cx: fcx, faceTop: (spec.face_cy ?? 0.43) * T.H - fr * T.H / 2, z: 10 });
+  // wordmark del brand in alto a sinistra (default); show_logo "symbol" = solo il simbolo
+  const logo = KIT.frameLogo(frame, spec, { x: 40, y: 34, h: 58, dark: true, avoid: [rec] });
+  const rectOf = KIT.rectOf;
+  const label = spec.format_label ? KIT.smallCaps(frame, spec.format_label, { right: T.zones.topRight.x - 14, y: 44, kind: 'label', size: 15, tracking: '.17em', avoid: spec.disc ? [] : [rec] }) : null;
+  // disco di campo dietro la testa: accento (mai un accento nei toni della pelle dietro un volto → carta) o carta
+  const circles = [];
+  let dsc = null;
+  const skin = KIT.skinLike(C[accent]);
+  const dmode = spec.disc === 'paper' ? 'paper' : (spec.disc === true || spec.disc === 'accent') ? (skin ? 'paper' : 'accent') : null;
+  if (spec.disc && dmode === 'paper' && spec.disc !== 'paper') KIT.report.notes.push('disco: accento nei toni della pelle, mai dietro il volto → disco carta');
+  if (dmode) {
+    const d = KIT.solveDisc(rec, { side: 1, k: spec.disc_k || 1.2, dx: spec.disc_dx ?? 0.58, dy: spec.disc_dy ?? -0.40, kMin: 0.95, kMax: 1.45,
+      avoid: [logo && logo.rect].filter(Boolean), allowHover: true, contain: label ? [rectOf(label)] : [] });
+    if (d) {
+      const col = dmode === 'paper' ? C.paper : C[accent];
+      KIT.disc(frame, { cx: d.cx, cy: d.cy, r: d.r, color: col, z: 6, kind: dmode === 'paper' ? 'disco-carta' : 'disco-campo', field: true });
+      dsc = d; circles.push({ cx: d.cx, cy: d.cy, r: d.r + 4 });
+    } else KIT.report.notes.push('disco: nessuna posizione valida (zona del timestamp / bordi)');
+  }
+  KIT.labelOnDisc(label, dsc);
+  const avoid = [logo && logo.rect, label && rectOf(label)].filter(Boolean);
+  const prop = spec.prop_obj ? await KIT.propSlot(frame, spec.prop_obj, rec, { side: 1, z: 5 }) : null;
+  if (spec.guest_style === 'graphic') {
+    KIT.glow(frame, rec, { color: C[accent], r: 10, blur: 18, opacity: 0.55, z: 7 });
+    KIT.outline(frame, rec, { color: C.paper, r: 7, z: 8 });
+  }
+  // credenziale + riga meta in basso a sinistra
+  const metaH = spec.meta_line ? 30 : 0;
+  const plateBox = g.name ? KIT.namePlate(frame, g, { x: 44, y: T.H - 62 - metaH - (g.title ? 98 : 58), accent, maxW: 600 }) : null;
+  const meta = spec.meta_line ? KIT.smallCaps(frame, spec.meta_line, { x: 46, y: T.H - 46, kind: 'meta', size: 17 }) : null;
+  const boxes = [plateBox && plateBox.rect, meta && rectOf(meta), prop && prop.rect, ...avoid].filter(Boolean);
+  // titolo a sinistra del volto
+  const hook = KIT.headline(frame, spec, { accent, keywordStyle: spec.keyword_style || 'box', align: 'left' });
+  const yMax = plateBox ? plateBox.rect.y - 18 : T.H - 70;
+  KIT.fitBetween(hook, { right: rec, x0: 44, yMin: 92, yMax, gap: spec.text_gap || 26, min: 60, max: 240, maxLines: 3,
+    center: spec.text_center || 0.40, circles, boxes, align: 'left', bands: [260, 300, 340, 380, 420, 460, 500] });
+  KIT.finish('ritratto', { accent, field: spec.plate_src ? 'scene' : 'ink', grade: spec.grade || null, guest_style: spec.guest_style || 'none',
+    disc: dsc ? { cx: +dsc.cx.toFixed(1), cy: +dsc.cy.toFixed(1), r: +dsc.r.toFixed(1), mode: dmode } : null });
+});
+</script></body></html>

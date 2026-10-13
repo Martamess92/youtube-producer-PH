@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="referrer" content="no-referrer">
+<title>Studio sulle copertine</title>
+<!--
+  Pre-test kit delle thumbnail (plugin youtube, YouTube Producer). Modello: non aprirlo così com'è.
+  build_kit.py sostituisce il segnaposto KIT qui sotto con la configurazione e le immagini
+  (data URI) e scrive una pagina autonoma. Uso, privacy e passi: README.md del kit.
+-->
+<style>
+:root {
+  --bg: #ffffff; --fg: #0f0f0f; --muted: #606060; --line: #e5e5e5; --skel: #ececec;
+  --panel: #f2f2f2; --btn: #0f0f0f; --btnfg: #ffffff; --btn2: #f2f2f2; --btn2fg: #0f0f0f;
+  --slot: #d0d0d0; --hover: #065fd4; --warn: #b3261e; --ok: #1e7f3a;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f0f; --fg: #f1f1f1; --muted: #aaaaaa; --line: #303030; --skel: #272727;
+  --panel: #212121; --btn: #f1f1f1; --btnfg: #0f0f0f; --btn2: #272727; --btn2fg: #f1f1f1;
+  --slot: #3d3d3d; --hover: #3ea6ff; --warn: #f2b8b5; --ok: #8fd19e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 16px/1.5 Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased; min-height: 100vh;
+}
+img { -webkit-user-drag: none; user-select: none; }
+button { font: inherit; cursor: pointer; }
+.preview-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50; text-align: center;
+  background: #c62828; color: #fff; font-size: 13px; padding: 4px 8px; letter-spacing: .02em;
+}
+.screen { max-width: 760px; margin: 0 auto; padding: 56px 24px 40px; }
+.screen h1 { font-size: 26px; line-height: 1.25; margin: 0 0 16px; font-weight: 700; }
+.screen h2 { font-size: 21px; line-height: 1.3; margin: 0 0 12px; font-weight: 700; }
+.screen p { margin: 0 0 12px; }
+.screen .muted { color: var(--muted); font-size: 14px; }
+.screen ul { margin: 0 0 12px; padding-left: 20px; }
+.actions { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.btn {
+  border: 0; border-radius: 20px; padding: 10px 20px; background: var(--btn); color: var(--btnfg);
+  font-weight: 600; font-size: 15px;
+}
+.btn[disabled] { opacity: .4; cursor: default; }
+.btn.secondary { background: var(--btn2); color: var(--btn2fg); }
+.q { margin: 20px 0 8px; font-weight: 600; }
+.opts { display: grid; gap: 8px; margin: 8px 0 0; }
+.opt {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px;
+  background: var(--panel); cursor: pointer;
+}
+.opt input { width: 18px; height: 18px; margin: 0; }
+textarea {
+  width: 100%; min-height: 72px; resize: vertical; border-radius: 10px; padding: 10px 12px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg); font: inherit;
+}
+.err { color: var(--warn); font-size: 14px; min-height: 1.4em; margin-top: 6px; }
+
+/* ---------- feed ---------- */
+#feed { position: fixed; inset: 0; background: var(--bg); z-index: 10; overflow: hidden; }
+#feed[hidden] { display: none; }
+.topbar {
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; gap: 24px;
+}
+.tb-l { display: flex; align-items: center; gap: 20px; min-width: 140px; }
+.ham { display: inline-grid; gap: 4px; width: 20px; }
+.ham i { display: block; height: 2px; background: var(--fg); border-radius: 1px; }
+.mark { width: 92px; height: 20px; border-radius: 4px; background: var(--skel); }
+.search {
+  flex: 0 1 560px; height: 40px; border-radius: 20px; border: 1px solid var(--line);
+  display: flex; align-items: center; padding: 0 16px; color: var(--muted); font-size: 15px;
+}
+.tb-r { min-width: 140px; display: flex; justify-content: flex-end; }
+.me { width: 32px; height: 32px; border-radius: 50%; background: var(--skel); }
+.askbar {
+  position: absolute; top: 0; left: 0; right: 0; height: 56px; display: none; align-items: center;
+  justify-content: center; gap: 16px; padding: 0 24px; background: var(--bg); font-weight: 600;
+  border-bottom: 1px solid var(--line); text-align: center;
+}
+#feed.ask .askbar { display: flex; }
+.grid {
+  display: grid; grid-template-columns: repeat(3, var(--tw, 300px)); column-gap: 16px; row-gap: 20px;
+  justify-content: center; padding: 16px 24px;
+}
+.tile { width: var(--tw, 300px); }
+.th {
+  position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+  background: var(--skel);
+}
+.th img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.meta { display: flex; gap: 12px; padding-top: 12px; height: 52px; }
+.av { flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--skel); }
+.ln { flex: 1; display: grid; gap: 8px; align-content: start; padding-top: 2px; }
+.ln i { display: block; height: 10px; border-radius: 5px; background: var(--skel); }
+.grid.off .th img { visibility: hidden; }
+.grid.off .th { background: transparent; border: 2px dashed var(--slot); cursor: pointer; }
+.grid.off .th:hover { border-color: var(--hover); border-style: solid; }
+.grid.picked .th { cursor: default; }
+.fix {
+  position: absolute; inset: 56px 0 0 0; display: none; align-items: center; justify-content: center;
+  font-size: 40px; color: var(--muted); background: var(--bg);
+}
+#feed.fixing .fix { display: flex; }
+
+/* ---------- card singola e testa a testa ---------- */
+.solo { display: flex; justify-content: center; margin: 20px 0; }
+.solo .tile { width: var(--sw, 360px); }
+.solo .th.blank { background: transparent; border: 2px dashed var(--slot); }
+.solo .th.blank img { visibility: hidden; }
+.pair { display: flex; gap: 24px; justify-content: center; margin: 20px 0 8px; flex-wrap: nowrap; }
+.pair .tile { width: var(--hw, 360px); cursor: pointer; border-radius: 14px; padding: 6px; margin: -6px; }
+.pair .tile:hover { outline: 2px solid var(--hover); }
+.pair .title { font-weight: 600; font-size: 15px; line-height: 1.35; margin: 0; }
+.wide { max-width: 860px; }
+.center { text-align: center; }
+pre.dump {
+  white-space: pre-wrap; word-break: break-word; font-size: 12px; line-height: 1.4;
+  background: var(--panel); padding: 12px; border-radius: 10px; max-height: 50vh; overflow: auto;
+}
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--line);
+  border-top-color: var(--fg); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div id="banner" class="preview-banner" hidden></div>
+<main id="app"></main>
+<section id="feed" hidden aria-label="Pagina di video">
+  <div class="topbar">
+    <div class="tb-l"><span class="ham"><i></i><i></i><i></i></span><span class="mark"></span></div>
+    <div class="search">Cerca</div>
+    <div class="tb-r"><span class="me"></span></div>
+  </div>
+  <div class="askbar"><span>Quale di questi video apriresti? Clicca il riquadro dove si trovava.</span>
+    <button class="btn secondary" id="feed-none" type="button">Non ricordo / nessuno</button></div>
+  <div class="grid" id="grid"></div>
+  <div class="fix">+</div>
+</section>
+<script>
+const KIT = /*__KIT__*/null;
+</script>
+<script>
+(function () {
+  'use strict';
+  const app = document.getElementById('app');
+  if (!KIT) {
+    app.innerHTML = '<div class="screen"><h1>Modello non compilato</h1><p>Questo file è il modello del kit: genera la pagina con <code>build_kit.py</code>.</p></div>';
+    return;
+  }
+
+  // ---------- parametri, modalità ----------
+  const qs = new URLSearchParams(location.search);
+  const DEBUG = qs.get('debug') === '1';
+  const sink = KIT.sink || {};
+  const SINK_READY = sink.type === 'google_form' && /^https:\/\/docs\.google\.com\/forms\/d\/e\/[^/]+\/formResponse$/.test(sink.form_action || '') &&
+    !!(sink.fields && /^entry\.\d+$/.test(sink.fields.record || ''));
+  const PREVIEW = DEBUG || !SINK_READY;
+  const PID = qs.get('PROLIFIC_PID') || qs.get('pid') || '';
+  const T0 = performance.now();
+
+  if (PREVIEW) {
+    const b = document.getElementById('banner');
+    b.hidden = false;
+    b.textContent = 'ANTEPRIMA — le risposte non vengono inviate' + (SINK_READY ? ' (debug=1)' : ' (raccolta dati non configurata)');
+  }
+
+  // ---------- casualità ----------
+  function rand() { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; }
+  function randInt(n) { return Math.floor(rand() * n); }
+  function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function pick(arr) { return arr[randInt(arr.length)]; }
+
+  // ---------- assegnazione (persistente per PID solo in modalità reale) ----------
+  const armIds = KIT.arms.map(a => a.id);
+  const themes = (KIT.feed && KIT.feed.themes && KIT.feed.themes.length) ? KIT.feed.themes : ['dark', 'light'];
+  const FEED_ON = !!(KIT.feed && KIT.feed.enabled && KIT.neighbours && KIT.neighbours.length === 8);
+  const storeKey = 'pretest:' + KIT.study_id + ':' + (PID || 'anon');
+  function loadState() { if (PREVIEW) return null; try { return JSON.parse(localStorage.getItem(storeKey) || 'null'); } catch (e) { return null; } }
+  function saveState(s) { if (PREVIEW) return; try { localStorage.setItem(storeKey, JSON.stringify(s)); } catch (e) { /* storage bloccato: si va avanti senza */ } }
+  function ov(name, allowed) { if (!DEBUG) return null; const v = qs.get(name); return (v !== null && allowed.includes(v)) ? v : null; }
+
+  let st = loadState();
+  if (st && st.study_id === KIT.study_id && st.build === KIT.build_id) {
+    st.reloads = (st.reloads || 0) + 1;
+  } else {
+    const slotOv = ov('slot', ['0', '1', '2', '3', '4', '5', '6', '7', '8']);
+    st = {
+      study_id: KIT.study_id, build: KIT.build_id,
+      arm: ov('arm', armIds) || pick(armIds),
+      theme: ov('theme', themes) || pick(themes),
+      slot: slotOv !== null ? Number(slotOv) : randInt(9),
+      neighbours: shuffle((KIT.neighbours || []).map(n => n.id)),
+      pairs: shuffle(KIT.pairs).map(p => (rand() < 0.5 ? [p[0], p[1]] : [p[1], p[0]])),
+      line_w: Array.from({ length: 11 }, () => [70 + randInt(26), 38 + randInt(24)]),
+      reloads: 0, done: false
+    };
+  }
+  saveState(st);
+  document.documentElement.setAttribute('data-theme', st.theme);
+
+  const rec = {
+    kit: KIT.kit_version, study_id: KIT.study_id, build: KIT.build_id, preview: PREVIEW,
+    pid: PID, study: qs.get('STUDY_ID') || '', session: qs.get('SESSION_ID') || '',
+    arm: st.arm, theme: st.theme, feed_on: FEED_ON,
+    imc: null, feed: null, promise: null, h2h: [], profile: null,
+    env: null, reloads: st.reloads, t_start: new Date().toISOString(), t_end: null, total_ms: null
+  };
+
+  // ---------- utilità ----------
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // Istante del primo frame dipinto; se la scheda non è visibile requestAnimationFrame si ferma:
+  // dopo 150 ms si prende l'orologio (l'esposizione viene comunque segnata come non valida).
+  const frame = () => Promise.race([
+    new Promise(r => requestAnimationFrame(() => requestAnimationFrame(t => r(t)))),
+    sleep(150).then(() => performance.now())
+  ]);
+  function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  function screen(html, cls) { app.innerHTML = ''; const s = el('<div class="screen ' + (cls || '') + '">' + html + '</div>'); app.appendChild(s); window.scrollTo(0, 0); return s; }
+  function tileHTML(lw) {
+    return '<div class="tile"><div class="th"><img alt="" draggable="false"></div>' +
+      '<div class="meta"><span class="av"></span><span class="ln"><i style="width:' + lw[0] + '%"></i><i style="width:' + lw[1] + '%"></i></span></div></div>';
+  }
+  document.addEventListener('contextmenu', e => { if (e.target && e.target.tagName === 'IMG') e.preventDefault(); });
+
+  // ---------- immagini: decodifica prima di ogni esposizione a tempo ----------
+  const imgCache = {};
+  function imgFor(id) {
+    if (!imgCache[id]) { const im = new Image(); im.src = KIT.images[id]; imgCache[id] = im; }
+    return imgCache[id];
+  }
+  // decode() può restare in attesa se la scheda è in background o su browser datati:
+  // si accetta anche l'evento load, con un tetto di 6 s.
+  function ready(im) {
+    if (im.complete && im.naturalWidth > 0 && !im.decode) return Promise.resolve();
+    const viaDecode = im.decode ? im.decode().catch(() => null) : new Promise(() => {});
+    const viaLoad = new Promise(r => { if (im.complete && im.naturalWidth > 0) r(); else im.addEventListener('load', () => r(), { once: true }); });
+    return Promise.race([viaDecode, viaLoad.then(() => sleep(50)), sleep(6000)]);
+  }
+  let decoded = null;
+  function decodeAll() {
+    if (!decoded) {
+      const ids = armIds.concat(FEED_ON ? KIT.neighbours.map(n => n.id) : []);
+      decoded = Promise.all(ids.map(id => ready(imgFor(id))));
+    }
+    return decoded;
+  }
+
+  // ---------- dimensioni ----------
+  const MINV = KIT.min_viewport || { w: 1000, h: 620 };
+  function feedTile() {
+    const tw1 = (innerWidth - 48 - 32) / 3;
+    const rowH = (innerHeight - 56 - 32 - 40) / 3;
+    const tw2 = (rowH - 52) / 0.5625;
+    return Math.floor(Math.min(tw1, tw2, (KIT.feed && KIT.feed.tile_max_px) || 360));
+  }
+  function coarseOnly() { return matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches; }
+  function viewportOK() {
+    if (coarseOnly()) return false;
+    if (innerWidth < MINV.w || innerHeight < MINV.h) return false;
+    if (FEED_ON && feedTile() < ((KIT.feed && KIT.feed.tile_min_px) || 220)) return false;
+    return true;
+  }
+
+  // ---------- schermate ----------
+  function gate() {
+    if (viewportOK()) return intro();
+    const s = screen(
+      '<h1>Serve un computer con una finestra grande</h1>' +
+      '<p>Questo studio funziona solo su computer, con la finestra del browser di almeno ' + MINV.w + ' × ' + MINV.h + ' pixel.</p>' +
+      '<ul><li>Ingrandisci la finestra a tutto schermo, oppure riduci lo zoom della pagina (Ctrl o Cmd e il tasto −), poi premi «Riprova».</li>' +
+      '<li>Se stai usando un telefono o un tablet, torna su Prolific e ritira la partecipazione («Return»): non verrai penalizzato.</li></ul>' +
+      '<p class="muted">Finestra attuale: <span id="vp"></span></p>' +
+      '<div class="actions"><button class="btn" id="retry" type="button">Riprova</button></div>');
+    s.querySelector('#vp').textContent = innerWidth + ' × ' + innerHeight;
+    s.querySelector('#retry').onclick = gate;
+  }
+
+  function intro() {
+    decodeAll();
+    const s = screen(
+      '<h1>Studio sulle copertine dei video</h1>' +
+      '<p>Grazie per partecipare. Lo studio dura circa 2 minuti.</p>' +
+      '<p>Ti mostreremo una pagina di video simile a quella di YouTube e alcune copertine, poi ti faremo poche domande. ' +
+      'Non ci sono risposte giuste o sbagliate: ci interessa la tua prima impressione.</p>' +
+      '<p class="muted">Raccogliamo solo le tue risposte, i tempi di risposta, la dimensione della finestra del browser e il tuo ID Prolific. Nessun altro dato personale.</p>' +
+      '<p class="muted">Alcune copertine riguardano video non ancora pubblicati: per favore non fare screenshot e non condividerle.</p>' +
+      '<div class="actions"><button class="btn" id="go" type="button">Inizia</button></div>');
+    s.querySelector('#go').onclick = imc;
+  }
+
+  function radios(name, options) {
+    return '<div class="opts" role="radiogroup">' + options.map((o, i) =>
+      '<label class="opt"><input type="radio" name="' + name + '" value="' + o.v + '" id="' + name + i + '"><span>' + o.t + '</span></label>').join('') + '</div>';
+  }
+  function radioVal(s, name) { const r = s.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : null; }
+
+  function imc() {
+    const t = performance.now();
+    const s = screen(
+      '<h2>Prima di iniziare</h2>' +
+      '<p class="q">Per mostrare che leggi con attenzione, in questa domanda seleziona «Verde».</p>' +
+      radios('imc', [{ v: 'rosso', t: 'Rosso' }, { v: 'blu', t: 'Blu' }, { v: 'verde', t: 'Verde' }, { v: 'giallo', t: 'Giallo' }]) +
+      '<div class="err" id="e"></div><div class="actions"><button class="btn" id="next" type="button">Avanti</button></div>');
+    s.querySelector('#next').onclick = () => {
+      const v = radioVal(s, 'imc');
+      if (!v) { s.querySelector('#e').textContent = 'Scegli una risposta per continuare.'; return; }
+      rec.imc = { answer: v, pass: v === 'verde', rt_ms: Math.round(performance.now() - t) };
+      FEED_ON ? feedIntro() : promiseIntro();
+    };
+  }
+
+  // ---------- feed a tempo ----------
+  function buildFeed() {
+    const grid = document.getElementById('grid');
+    const tw = feedTile();
+    grid.style.setProperty('--tw', tw + 'px');
+    grid.innerHTML = '';
+    let ni = 0;
+    const order = [];
+    for (let slot = 0; slot < 9; slot++) {
+      const id = (slot === st.slot) ? st.arm : st.neighbours[ni++];
+      order.push(id);
+      const t = el(tileHTML(st.line_w[slot]));
+      t.dataset.slot = String(slot);
+      const img = t.querySelector('img');
+      img.src = KIT.images[id];
+      grid.appendChild(t);
+    }
+    return { grid, tw, order };
+  }
+
+  function feedIntro() {
+    const s = screen(
+      '<h2>La pagina dei video</h2>' +
+      '<p>Immagina di aprire YouTube e di trovare questi video nella pagina iniziale.</p>' +
+      '<p>La pagina resterà visibile per <strong>3 secondi</strong>, poi le copertine spariranno. Guardala come faresti di solito, senza studiarla.</p>' +
+      '<div class="actions"><button class="btn" id="show" type="button" disabled><span class="spinner"></span> Caricamento…</button></div>');
+    const b = s.querySelector('#show');
+    decodeAll().then(() => { b.disabled = false; b.textContent = 'Mostra la pagina'; });
+    b.onclick = () => { if (!b.disabled) runFeed(); };
+  }
+
+  async function runFeed() {
+    if (!viewportOK()) return gate();
+    await decodeAll();
+    const feed = document.getElementById('feed');
+    const { grid, tw, order } = buildFeed();
+    const imgs = Array.from(grid.querySelectorAll('img'));
+    await Promise.all(imgs.map(ready));
+    let hiddenDuring = document.visibilityState !== 'visible';
+    const onVis = () => { if (document.visibilityState !== 'visible') hiddenDuring = true; };
+    document.addEventListener('visibilitychange', onVis);
+    app.innerHTML = '';
+    feed.className = 'fixing'; feed.hidden = false;
+    grid.className = 'grid off';
+    await sleep((KIT.feed && KIT.feed.fixation_ms) || 800);
+    feed.className = '';
+    grid.className = 'grid';
+    const tOn = await frame();
+    await sleep((KIT.feed && KIT.feed.exposure_ms) || 3000);
+    grid.className = 'grid off';
+    const tOff = await frame();
+    document.removeEventListener('visibilitychange', onVis);
+    feed.className = 'ask';
+    const tAsk = performance.now();
+    let answered = false;
+    function done(slot) {
+      if (answered) return; answered = true;
+      grid.classList.add('picked');
+      const chosenId = slot === null ? null : order[slot];
+      rec.feed = {
+        slot: st.slot, order: order, tile_px: tw, exposure_ms_set: (KIT.feed && KIT.feed.exposure_ms) || 3000,
+        exposure_ms: Math.round(tOff - tOn), hidden_during_exposure: hiddenDuring,
+        choice_slot: slot, choice_id: chosenId, chose_candidate: slot === st.slot,
+        rt_ms: Math.round(performance.now() - tAsk)
+      };
+      feed.hidden = true; feed.className = '';
+      promiseIntro();
+    }
+    grid.querySelectorAll('.tile').forEach(t => {
+      t.querySelector('.th').onclick = () => done(Number(t.dataset.slot));
+    });
+    document.getElementById('feed-none').onclick = () => done(null);
+  }
+
+  // ---------- cosa promette / a chi è rivolto ----------
+  function promiseIntro() {
+    const s = screen(
+      '<h2>Una copertina</h2>' +
+      '<p>Ora vedrai per <strong>3 secondi</strong> la copertina di ' + (FEED_ON ? 'uno dei video della pagina' : 'un video') + '. Poi ti faremo due domande.</p>' +
+      '<div class="actions"><button class="btn" id="show" type="button" disabled><span class="spinner"></span> Caricamento…</button></div>');
+    const b = s.querySelector('#show');
+    decodeAll().then(() => { b.disabled = false; b.textContent = 'Mostra la copertina'; });
+    b.onclick = () => { if (!b.disabled) runPromise(); };
+  }
+
+  async function runPromise() {
+    const pw = Math.min((KIT.promise && KIT.promise.tile_px) || 360, innerWidth - 48);
+    const expo = (KIT.promise && typeof KIT.promise.exposure_ms === 'number') ? KIT.promise.exposure_ms : 3000;
+    const s = screen(
+      '<div class="solo" style="--sw:' + pw + 'px">' + tileHTML(st.line_w[9]) + '</div>' +
+      '<div id="qs" hidden>' +
+      '<p class="q"><label for="pr">Cosa promette questo video? Scrivi una frase.</label></p>' +
+      '<textarea id="pr" maxlength="400"></textarea>' +
+      '<p class="q"><label for="au">A chi è rivolto, secondo te? Bastano poche parole.</label></p>' +
+      '<textarea id="au" maxlength="300" style="min-height:52px"></textarea>' +
+      '<div class="err" id="e"></div><div class="actions"><button class="btn" id="next" type="button">Avanti</button></div></div>', 'wide');
+    const th = s.querySelector('.th');
+    const img = s.querySelector('img');
+    img.src = KIT.images[st.arm];
+    th.classList.add('blank');
+    await ready(img);
+    let hiddenDuring = document.visibilityState !== 'visible';
+    const onVis = () => { if (document.visibilityState !== 'visible') hiddenDuring = true; };
+    document.addEventListener('visibilitychange', onVis);
+    th.classList.remove('blank');
+    const tOn = await frame();
+    let tOff = tOn;
+    if (expo > 0) {
+      await sleep(expo);
+      th.classList.add('blank');
+      tOff = await frame();
+    }
+    document.removeEventListener('visibilitychange', onVis);
+    s.querySelector('#qs').hidden = false;
+    const tAsk = performance.now();
+    s.querySelector('#pr').focus();
+    s.querySelector('#next').onclick = () => {
+      const p = s.querySelector('#pr').value.trim();
+      const a = s.querySelector('#au').value.trim();
+      if (p.length < 3 || a.length < 2) { s.querySelector('#e').textContent = 'Rispondi a tutte e due le domande (anche «non so» va bene).'; return; }
+      rec.promise = {
+        arm: st.arm, tile_px: pw, exposure_ms_set: expo, exposure_ms: expo > 0 ? Math.round(tOff - tOn) : null,
+        hidden_during_exposure: hiddenDuring, promise: p, audience: a, rt_ms: Math.round(performance.now() - tAsk)
+      };
+      pairStep(0);
+    };
+  }
+
+  // ---------- testa a testa ----------
+  function pairStep(i) {
+    if (i >= st.pairs.length) return profile();
+    const [left, right] = st.pairs[i];
+    const hw = Math.min((KIT.h2h && KIT.h2h.tile_px) || 360, Math.floor((innerWidth - 48 - 24) / 2));
+    const title = KIT.h2h && KIT.h2h.title ? KIT.h2h.title : '';
+    const card = (id, lw, n) => '<div class="tile" data-id="' + id + '" role="button" tabindex="0" aria-label="Copertina ' + n + '"><div class="th"><img alt="" draggable="false"></div>' +
+      (title ? '<div class="meta" style="height:auto"><span class="av"></span><span class="ln"><p class="title"></p><i style="width:' + lw[1] + '%"></i></span></div>'
+        : '<div class="meta"><span class="av"></span><span class="ln"><i style="width:' + lw[0] + '%"></i><i style="width:' + lw[1] + '%"></i></span></div>') + '</div>';
+    const s = screen(
+      '<h2 class="center">Quale dei due video apriresti?</h2>' +
+      '<p class="center muted">Clicca una copertina · ' + (i + 1) + ' di ' + st.pairs.length + '</p>' +
+      '<div class="pair" style="--hw:' + hw + 'px">' + card(left, st.line_w[10], 'a sinistra') + card(right, st.line_w[9], 'a destra') + '</div>', 'wide');
+    s.querySelectorAll('.tile').forEach(t => {
+      t.querySelector('img').src = KIT.images[t.dataset.id];
+      const tt = t.querySelector('.title'); if (tt) tt.textContent = title;
+    });
+    const t0 = performance.now();
+    let answered = false;
+    const choose = id => {
+      if (answered) return; answered = true;
+      const canon = KIT.pairs.find(p => (p[0] === left && p[1] === right) || (p[0] === right && p[1] === left));
+      rec.h2h.push({ pair: canon.join('|'), left, right, choice: id, position: i, rt_ms: Math.round(performance.now() - t0) });
+      pairStep(i + 1);
+    };
+    s.querySelectorAll('.tile').forEach(t => {
+      t.onclick = () => choose(t.dataset.id);
+      t.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(t.dataset.id); } };
+    });
+  }
+
+  // ---------- profilo ----------
+  function profile() {
+    const t = performance.now();
+    const showName = KIT.show_name || 'questo podcast';
+    const topic = KIT.topic || 'tecnologia, startup o business';
+    const s = screen(
+      '<h2>Ultime due domande</h2>' +
+      '<p class="q">Quanto spesso guardi su YouTube video o podcast su <span id="tp"></span>?</p>' +
+      radios('freq', [{ v: 'giorno', t: 'Quasi ogni giorno' }, { v: 'settimana', t: 'Ogni settimana' }, { v: 'mese', t: 'Qualche volta al mese' }, { v: 'raro', t: 'Raramente o mai' }]) +
+      '<p class="q">Prima di oggi conoscevi il podcast «<span id="sn"></span>»?</p>' +
+      radios('knows', [{ v: 'si', t: 'Sì' }, { v: 'no', t: 'No' }, { v: 'forse', t: 'Non sono sicuro/a' }]) +
+      '<div class="err" id="e"></div><div class="actions"><button class="btn" id="send" type="button">Invia le risposte</button></div>');
+    s.querySelector('#sn').textContent = showName;
+    s.querySelector('#tp').textContent = topic;
+    s.querySelector('#send').onclick = () => {
+      const f = radioVal(s, 'freq'), k = radioVal(s, 'knows');
+      if (!f || !k) { s.querySelector('#e').textContent = 'Rispondi a tutte e due le domande.'; return; }
+      rec.profile = { freq: f, knows_show: k, rt_ms: Math.round(performance.now() - t) };
+      finish();
+    };
+  }
+
+  // ---------- invio ----------
+  async function post() {
+    const body = new URLSearchParams();
+    body.append(sink.fields.record, JSON.stringify(rec));
+    if (sink.fields.pid) body.append(sink.fields.pid, rec.pid);
+    if (sink.fields.arm) body.append(sink.fields.arm, rec.arm);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await fetch(sink.form_action, { method: 'POST', mode: 'no-cors', body: body, keepalive: true });
+        return true;
+      } catch (e) { await sleep(800 * (attempt + 1)); }
+    }
+    return false;
+  }
+
+  async function finish() {
+    rec.t_end = new Date().toISOString();
+    rec.total_ms = Math.round(performance.now() - T0);
+    rec.env = {
+      vw: innerWidth, vh: innerHeight, dpr: window.devicePixelRatio || 1, coarse_only: coarseOnly(),
+      lang: navigator.language || '', tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || '')
+    };
+    if (PREVIEW) return previewEnd();
+    const s = screen('<h2>Grazie!</h2><p><span class="spinner"></span> Stiamo registrando le risposte…</p>');
+    const ok = await post();
+    if (!ok) {
+      const r = screen('<h2>Problema di connessione</h2><p>Non siamo riusciti a inviare le risposte. Controlla la connessione e premi «Riprova».</p>' +
+        '<div class="actions"><button class="btn" id="retry" type="button">Riprova</button></div>');
+      r.querySelector('#retry').onclick = finish;
+      return;
+    }
+    st.done = true; saveState(st);
+    await sleep(900);
+    const url = KIT.prolific && KIT.prolific.completion_url;
+    if (url && /^https:\/\/app\.prolific\.com\//.test(url)) {
+      s.innerHTML = '<h2>Grazie!</h2><p>Risposte registrate. Ti stiamo riportando su Prolific…</p><p class="muted">Se non succede nulla, <a id="cl">clicca qui</a>.</p>';
+      s.querySelector('#cl').href = url;
+      location.href = url;
+    } else {
+      s.innerHTML = '<h2>Grazie!</h2><p>Risposte registrate. Puoi chiudere questa pagina.</p>';
+    }
+  }
+
+  function previewEnd() {
+    const json = JSON.stringify(rec, null, 2);
+    const s = screen(
+      '<h2>Fine dell\'anteprima</h2>' +
+      '<p>Nessun dato è stato inviato. Questo è il record che la pagina invierebbe:</p>' +
+      '<pre class="dump" id="dump"></pre>' +
+      '<div class="actions"><button class="btn" id="dl" type="button">Scarica il JSON</button>' +
+      '<button class="btn secondary" id="again" type="button">Rifai con un\'altra assegnazione</button></div>', 'wide');
+    s.querySelector('#dump').textContent = json;
+    s.querySelector('#dl').onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json + '\n'], { type: 'application/json' }));
+      a.download = 'pretest-anteprima-' + rec.arm + '-' + Date.now() + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+    };
+    s.querySelector('#again').onclick = () => location.reload();
+    window.__PRETEST_RECORD__ = rec;
+  }
+
+  if (st.done && !PREVIEW) {
+    const url = KIT.prolific && KIT.prolific.completion_url;
+    const s = screen('<h2>Hai già completato lo studio</h2><p>Le tue risposte sono già state registrate.</p>' +
+      (url ? '<div class="actions"><a class="btn" id="cl">Torna su Prolific</a></div>' : ''));
+    if (url) s.querySelector('#cl').href = url;
+    return;
+  }
+  gate();
+})();
+</script>
+</body>
+</html>

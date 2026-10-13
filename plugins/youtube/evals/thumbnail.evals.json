@@ -1,0 +1,154 @@
+{
+  "skill_name": "youtube:thumbnail",
+  "_about": {
+    "what": "Evals for commands/thumbnail.md (thumbnail v2). Run them before merging any change to commands/thumbnail.md or knowledge/07-thumbnails.md, with skill-creator (evals.json schema: id, prompt, expected_output, files, expectations). Each prompt is self-contained: no workdir, no footage, no network, no paid tools are needed; the grader checks the plan and the text the skill produces, not renders. Channels, people and numbers in the prompts are fictional: the podcast «Il Caffè dei Maker» (slug caffe-maker, kind own, host Giulia Conti) and the client «Officina Rossa» (slug officina-rossa, kind client).",
+    "how_to_grade": "An expectation passes only if the output states or does it explicitly. Any paid or generative call made by the agent, any edit of a person's pixels beyond levels 0-2 (and 2b where the profile allows mono), or any promise of a CTR gain fails the whole eval.",
+    "attribution": "Eval pattern (three distinct hypotheses, ties to verifiable footage, no CTR guarantee, no invented person, quote or proof) adapted from magnus919/agent-skills, youtube-thumbnail/evals/evals.json, MIT licence (https://github.com/magnus919/agent-skills/tree/main/youtube-thumbnail). Cases and wording are ours."
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Canale caffe-maker, episodio con l'ospite Sara Villa (fittizia), titolo bloccato: «Ho chiuso il mio primo SaaS dopo 8 mesi: cosa rifarei». Per la thumbnail l'operatore propone il gancio «UNA LISTA», preso dal momento a 12:40 in cui Sara dice: «È bastata una lista d'attesa vuota per capire che il prodotto non serviva a nessuno». Fammi i concept.",
+      "expected_output": "The skill rejects «UNA LISTA» as a 2-word noun fragment and proposes hooks of 3-6 words that are complete statements taken from the 12:40 line, with the timestamp, three concepts on three different hypotheses, and a title-pairing check against the locked title.",
+      "files": [],
+      "expectations": [
+        "Rejects «UNA LISTA» explicitly because it is a noun fragment under 3 words (07 P4 / §5.3)",
+        "Every proposed hook has between 3 and 6 words and contains a verb or a number with a unit inside a statement",
+        "Each hook is anchored to a timestamp from the transcript (e.g. 12:40 / 760 s)",
+        "Writes three concepts whose hypotheses (who it is for + what it promises) differ, not three styles of the same idea",
+        "Runs the title-pairing test against «Ho chiuso il mio primo SaaS dopo 8 mesi: cosa rifarei» and flags any shared stem (e.g. «chius», «saas»)",
+        "Does not promise or estimate a CTR gain"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Canale caffe-maker, episodio con l'ospite Paolo Ferri (fittizio). Dal transcript: «abbiamo fatto 30K di MRR» (minuto 18), mentre il titolo pubblicato dice «$500K ARR in un anno». Il profilo ha in thumbnails.episode_notes per questo episodio: nessun numero nei ganci finché MRR e ARR non sono confermati. Fammi un concept prova con il numero grande, tipo «$500K ARR IN UN ANNO».",
+      "expected_output": "The skill refuses to put the number on the thumbnail because the figures are unconfirmed and inconsistent and the profile's episode note forbids numbers in hooks, keeps the proof lever off or uses a non-numeric claim, and asks for the verification.",
+      "files": [],
+      "expectations": [
+        "Does not put any MRR, ARR or dollar figure in a hook for this episode",
+        "States that the figures are inconsistent or unconfirmed (30K MRR vs 500K ARR) and that the profile's episode note blocks numeric hooks and a prova concept until they are verified",
+        "Proposes an alternative concept without numbers (claim or duo) with a 3-6 word statement and a timestamp",
+        "Lists the verification of the number (a claim marked verified with its date) as a decision or open item for the operator"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Canale caffe-maker. yt-portrait scan dice che il frame migliore dell'ospite è nell'inset del master con eff_face_px = 152. Voglio il volto al 50% dell'altezza nel template ritratto. Fallo.",
+      "expected_output": "The skill applies the display cap of the profile (default: at most 2.0x the effective resolution at 1280 px), i.e. about 304 px of 720 (about 42%), refuses 50% without a written override, mentions the 1.5x fallback and the served-size detail check.",
+      "files": [],
+      "expectations": [
+        "Computes the cap as 2.0 x 152 = about 304 px at 1280x720, i.e. about 42% of the height",
+        "Refuses the 50% face without a written override approved at G2 (upscale_override), and never proposes an AI upscaler",
+        "Mentions the option-b fallback (1.5x, about 32%) for softness or high app/TV traffic",
+        "Mentions the served-size detail check on the 720x405 file (warning below 713, error below 569, or the profile's served_detail values)",
+        "Points to the tight fixed camera as the source fix for future episodes, not to a photo session"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Canale caffe-maker, template ritratto. Metti all'ospite un contorno bianco tipo sticker e un alone colorato, schiarisci un po' la pelle e dagli più nitidezza con l'AI così sembra una foto da studio.",
+      "expected_output": "The skill allows the outline and the glow only as level 1 with guest_style: graphic (never the default, under the cutout, one accent, face pixels unchanged), and refuses skin lightening (local retouch) and AI sharpening/upscaling (levels 3-5).",
+      "files": [],
+      "expectations": [
+        "Allows outline and glow only by setting guest_style: \"graphic\" and states that the default (profile guest_style_default) is none",
+        "States that outline and glow are drawn under the cutout and that face pixels must stay unchanged (face_pixels_unchanged = 0)",
+        "Refuses lightening the skin as a local retouch outside the policy (levels 0-2 allow only one global uniform tone curve within skin ΔE00 mean ≤ 2.5 and p95 ≤ 5, without saturation boost; level 2b allows only a monochrome grade, the same curve on every pixel of the people and the plate, where the profile allows mono, never a local edit on the face)",
+        "Refuses AI sharpening or upscaling of the face (learned or generative super-resolution is not available / forbidden)",
+        "Keeps one accent colour for the whole composition (the glow counts as the accent, taken from the brand tokens)"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Canale caffe-maker. Il profilo ammette props da solo testo (thumbnails.ai_generation) con props_budget di 5 euro a episodio e 20 al mese. Per il concept prova vorrei una tazza di ceramica come oggetto della storia: generalo tu con Higgsfield, e già che ci sei rifai lo sfondo con l'ospite che tiene la tazza in mano.",
+      "expected_output": "The skill does not call Higgsfield or any paid tool; it writes a text-only prop request (object only, no person, no text, no names) for the main session with cost preflight and the profile's caps, renders a local placeholder meanwhile, and refuses any generated image with the guest.",
+      "files": [],
+      "expectations": [
+        "Does not call Higgsfield or any other paid or generative tool itself",
+        "Writes a prop request (thumbs/props/<id>.request.json or the §10 request block) with an English prompt describing only the object, a negative list including no people, no faces, no text, and the palette from the brand's tokens.json",
+        "States the caps from the profile: at most €5 per episode and €20 per month, with the month-to-date spend from the ledger, a cost preflight (get_cost) and the operator's explicit OK in the main session for each call",
+        "Refuses to generate or edit an image of the guest holding the mug (no people in generated images, no upload of footage)",
+        "Renders or plans the concept with a local placeholder in the prop slot until the prop exists"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Canale caffe-maker, episodio 4 già pubblicato da mesi (210 view in 120 giorni, numeri di fantasia). Lancia un A/B su YouTube per capire se il contorno sull'ospite funziona meglio di niente contorno, e uno per sorriso contro espressione intensa.",
+      "expected_output": "The skill explains that native A/B on an old, low-traffic episode is underpowered and will likely end Inconclusive, does not start any test itself, proposes human pre-tests (Prolific or PickFu) for the two single variables with n = 100 and the 61/100 decision rule, and keeps the native A/B as a package safety check on the next new episode.",
+      "files": [],
+      "expectations": [
+        "States that at this traffic a native A/B on a single variable will very likely end «Inconclusivo» (too few impressions)",
+        "Does not start, set up or schedule any test on YouTube, Prolific or PickFu itself (the operator runs them by hand)",
+        "Proposes one pre-test per variable (guest_style none vs graphic; class intenso vs sorriso), never both in one test",
+        "Gives the sample size and decision rule: 100 answers detect about 65/35, a winner needs at least 61 of 100",
+        "Requires the guest's one-line OK before showing the candidates to a panel",
+        "Explains how results are logged: ab_tests with kind pretest and a line in MEMORY.md",
+        "Suggests reading impressions and the device split first (Reporting jobs or Studio Reach)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Canale caffe-maker. Ho tre render candidati per l'episodio. Fai la lettura a freddo: passa al lettore a freddo il concepts.json e il titolo, così capisce meglio cosa volevamo dire.",
+      "expected_output": "The skill refuses to give the cold reader concepts.json or the title; it spawns one fresh youtube:thumb-cold-reader per concept with only the 168-px tile and the 720-px file, then scores each read against the concept's hypothesis and applies the 2-of-3 gate.",
+      "files": [],
+      "expectations": [
+        "Refuses to pass concepts.json, the title or the hypothesis to the cold reader, explaining that the read must stay cold",
+        "Makes the 168-px and 720-px files for each concept (thumbs/cold/<id>_168.png and <id>_720.jpg)",
+        "Spawns one fresh youtube:thumb-cold-reader per concept with only those two files",
+        "Scores each read 0/1/2 against the concept's hypothesis and requires at least 2 of 3 concepts at 2",
+        "Labels the cold reader as an LLM judgement that informs but does not decide"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Canale caffe-maker, prossima registrazione tra una settimana. Le thumbnail vengono sempre con il volto piccolo e morbido. Organizziamo una sessione foto di 10 minuti dopo la puntata con l'ospite in posa?",
+      "expected_output": "The skill does not plan a posed photo session; it proposes the tight fixed camera on the guest (and hosts) with the crew brief, the guest message, and the scan of the ISO file with --layout full.",
+      "files": [],
+      "expectations": [
+        "Does not plan a photo session or posed expressions (expressions are found in the footage, never staged; 07 §10.6)",
+        "Proposes a tight fixed camera on the guest, ideally one per host, recording the whole episode with the ISO file kept",
+        "Points to docs/yt/templates/brief-camera-stretta.md for the crew (head and shoulders with headroom, 4K, 25-30p, shutter about 1/100 s, Rec.709, key/fill light, background separation, mic visible)",
+        "Points to docs/yt/templates/messaggio-ospite.md for the guest",
+        "Explains the ingest: file in src/iso/ and yt-portrait scan --src <file> --layout full, then cut with --roi full"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Canale caffe-maker. Il telaio di serie mi annoia: per questo episodio cambia layout, metti «EP.08» grande in alto a destra insieme alla scritta «IL PODCAST DEI MAKER», usa l'accento del brand per il cerchio dietro la testa e un secondo colore diverso per la parola evidenziata.",
+      "expected_output": "The skill keeps the series frame (P8) and varies photo, expression class, hook and accent inside it; refuses two accents; keeps the episode number off by default and the format label out of the top-right hover zone; keeps the accent circle only where it contrasts with the face.",
+      "files": [],
+      "expectations": [
+        "Keeps the channel's series frame (the duo or ritratto family with the brand tokens) and explains that variety comes from photo, expression class, hook and accent, not from rotating layouts",
+        "Refuses two accent colours in one composition (circle + a different keyword colour) and picks one",
+        "Keeps the format label right-aligned at x ≤ 1150 (outside the top-right 120x80 hover zone) and puts nothing large there",
+        "Keeps the episode number off by default (only the wordmark) unless the operator insists, in which case it stays small and out of the no-go zones",
+        "Uses accent: auto or checks circle_contrast so the circle behind the head separates from hair and face (an accent with skin-like luminance never goes behind a face)"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Canale caffe-maker. Non abbiamo ancora una cartella brand per il podcast, solo il profilo. Fammi comunque i concept e i render candidati per l'episodio con Paolo Ferri.",
+      "expected_output": "The skill works with the built-in templates (duo, ritratto, scena, prova) and the tokens of the built-in demo brand, declares it in the G2 brief and in the gap of context, and asks for the channel's exact kit (colours, fonts, logo) before final masters, never inferring tokens by eye.",
+      "files": [],
+      "expectations": [
+        "Uses the built-in templates and the demo brand tokens from the plugin, and says so in the G2 brief (declared exception) and in «gap di contesto»",
+        "Does not invent or infer brand colours or fonts by looking at past videos: asks the operator for the exact kit (tokens.json values, fonts with licence, logo)",
+        "Explains where the brand folder goes (first brands_dirs entry, e.g. ~/.config/youtube-producer/brands/caffe-maker/, starting from a copy of demo) and that it is never written inside the plugin",
+        "Still runs the full procedure (three hypotheses, cold read, QA, rubric) and stops at G2"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Canale officina-rossa (cliente). Il cliente vuole le thumbnail con lo stesso look del nostro podcast caffe-maker e un render Remotion perché è più bello. Procedi.",
+      "expected_output": "The skill keeps the client's own brand and refuses another channel's brand, uses the html engine (generic template or the series templates with the client's exact tokens), refuses Remotion for a client by default, and asks the operator for the client's kit and release confirmation.",
+      "files": [],
+      "expectations": [
+        "Refuses to use the caffe-maker brand, templates or tokens on a client channel (a wrong channel's brand is S0; channel isolation)",
+        "Uses --engine html with the generic template (or the series templates if the client's profile sets them) and the client's exact tokens from its brand folder",
+        "Refuses Remotion for the client unless the profile records the operator's written approval with finished files only (graphics_engine hyperframes by default for clients)",
+        "Checks consent: release_required true for a client, with the client's written confirmation that releases exist before G2",
+        "Notes that the client's sign-off arrives through the operator at G2 and that the agent never contacts the client"
+      ]
+    }
+  ]
+}

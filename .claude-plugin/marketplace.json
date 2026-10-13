@@ -1,0 +1,14 @@
+{
+  "name": "youtube-producer",
+  "owner": {
+    "name": "MikeIdeas2025"
+  },
+  "description": "YouTube Producer: un agente per Claude Code che fa strategia di canale, montaggio locale, Shorts, thumbnail e analytics di YouTube.",
+  "plugins": [
+    {
+      "name": "youtube",
+      "source": "./plugins/youtube",
+      "description": "YouTube Producer: strategia, montaggio locale, Shorts, thumbnail e analytics di YouTube. Agente youtube:producer, comandi /youtube:*, setup con /youtube:setup."
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<!-- generic — template neutro a campo pieno, guidato dai token a runtime (token del brand, concept.tokens o --tokens).
+     Colori: colors.bg / colors.fg se ci sono (palette «fondo + testo»), altrimenti colors.paper / colors.ink (palette
+     carta-inchiostro, come il brand demo); accento = colors[tokens.accent] o colors.accent. Font: fonts.display (titolo),
+     fonts.body (kicker); i file devono stare in assets/fonts o in <brand>/fonts (default Inter).
+     Layout claim: gancio a sinistra, soggetto a destra, una parola evidenziata nel colore accento (testo scuro/chiaro scelto
+     per contrasto). Punto di partenza per i template propri di un brand: copialo in <brands_dir>/<slug>/templates/<slug>-….html.
+     Spec: text, highlight, hero, side, kicker, face_frac, face_cx, face_top, upper (default true). -->
+<html lang="it"><head><meta charset="utf-8">
+<style>
+  :root { --bg:#f4f1ea; --fg:#15171c; --accent:#ff5a2c; --font-display:"Inter"; --font-body:"Inter"; --display-weight:800; --display-track:-.035em; }
+  html, body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--bg); }
+  #frame { position:relative; width:1280px; height:720px; overflow:hidden; background:var(--bg); }
+  #glow { position:absolute; inset:0; background: radial-gradient(60% 80% at 76% 45%, var(--bg2, rgba(255,255,255,.55)) 0%, transparent 70%); }
+  .hero { position:absolute; filter: drop-shadow(0 18px 30px rgba(0,0,0,.28)); }
+  #hook { position:absolute; left:64px; font-family:var(--font-display), "Inter"; font-weight:var(--display-weight); line-height:.98;
+    letter-spacing:var(--display-track); color:var(--fg); text-wrap:balance; }
+  #hook .hl { display:inline-block; line-height:1; padding:.04em .12em .03em; border-radius:.08em; background:var(--accent); }
+  #kicker { position:absolute; left:64px; font:700 34px/1.1 var(--font-body), "Inter"; color:var(--fg); opacity:.85; }
+</style></head>
+<body><div id="frame"><div id="glow"></div></div>
+<script>
+TT.ready(async (spec, T) => {
+  const frame = document.getElementById('frame');
+  const tk = spec.tokens || T.tokens || {};
+  const c = tk.colors || {};
+  const root = document.documentElement.style;
+  const bg = c.bg || c.paper || '#f4f1ea';
+  const fg = c.fg || c.ink || '#15171c';
+  const acc = c[tk.accent] || c.accent || '#ff5a2c';
+  root.setProperty('--bg', bg);
+  root.setProperty('--fg', fg);
+  root.setProperty('--accent', acc);
+  if (c.bg2) root.setProperty('--bg2', c.bg2);
+  const f = tk.fonts || {};
+  const disp = (f.display && f.display.family) || 'Inter';
+  root.setProperty('--font-display', `"${disp}"`);
+  if (f.body && f.body.family) root.setProperty('--font-body', `"${f.body.family}"`);
+  // font display a un solo peso (Anton e simili): niente grassetto sintetico né tracking negativo
+  const single = (f.display && f.display.weight) || (/^(Anton|Bebas Neue|Oswald)$/i.test(disp) ? 400 : null);
+  if (single) { root.setProperty('--display-weight', String(single)); root.setProperty('--display-track', '0'); }
+  const side = spec.side || 'right';
+  let rec = null;
+  if (spec.hero && spec.hero.src) {
+    const img = T.el('img', 'hero', frame); img.src = spec.hero.src; await img.decode();
+    rec = T.placeHero(img, spec.hero, { faceH: (spec.face_frac || 0.28) * T.H, cx: (spec.face_cx || (side === 'right' ? 0.765 : 0.235)) * T.W,
+      faceTop: (spec.face_top || 0.17) * T.H });
+  }
+  const hook = T.el('div', '', frame); hook.id = 'hook'; hook.dataset.kind = 'hook';
+  T.hook(hook, spec.text, spec.highlight, { upper: spec.upper !== false });
+  hook.querySelectorAll('.hl').forEach((e) => { e.style.color = T.textOn(acc, T.lum(fg) < 0.2 ? fg : '#111111', '#ffffff'); });
+  let kicker = null;
+  if (spec.kicker) { kicker = T.el('div', '', frame, spec.kicker); kicker.id = 'kicker'; kicker.dataset.role = 'text'; kicker.dataset.kind = 'kicker'; }
+  const kH = kicker ? 56 : 0, yTop = 60, yBot = 662 - kH;
+  const avail = (y0, y1) => {
+    if (!rec) return T.W - 128;
+    const s = T.silhouette(rec, y0, y1);
+    return side === 'right' ? Math.min(760, s.left - 40 - 64) : Math.min(760, T.W - 64 - (s.right + 40));
+  };
+  let maxW = Math.max(380, avail(yTop, yBot));
+  T.fit(hook, { maxW, maxH: yBot - yTop, min: 50, max: 190, maxLines: 3 });
+  const place = () => {
+    const h = hook.getBoundingClientRect().height + kH;
+    const y = Math.max(yTop, (T.H - h) / 2 - 6);
+    hook.style.top = y + 'px';
+    if (side === 'left') { hook.style.left = (T.W - 64 - maxW) + 'px'; hook.style.textAlign = 'right'; }
+    if (kicker) { kicker.style.top = (y + hook.getBoundingClientRect().height + 16) + 'px'; if (side === 'left') { kicker.style.left = 'auto'; kicker.style.right = '64px'; } }
+  };
+  place();
+  const b = hook.getBoundingClientRect();
+  const m2 = Math.max(380, avail(b.top, b.bottom + kH));
+  if (Math.abs(m2 - maxW) > 8) { maxW = m2; T.fit(hook, { maxW, maxH: yBot - yTop, min: 50, max: 190, maxLines: 3 }); place(); }
+});
+</script></body></html>

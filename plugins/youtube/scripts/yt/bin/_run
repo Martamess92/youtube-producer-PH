@@ -1,0 +1,77 @@
+#!/bin/bash
+# Wrapper comune: yt-<cmd> → lib/<cmd con _>.py nel venv del toolkit; thumbvision → binario Swift.
+#
+# I comandi si chiamano per nome nudo (yt-ingest …): bin/ del plugin è nel PATH del tool Bash mentre il
+# plugin è attivo e contiene symlink relativi yt-* → ../scripts/yt/bin/_run. Funzionano anche i symlink
+# in scripts/yt/bin/. Il venv sta nella data dir del plugin (vedi _paths.sh e lib/config.py):
+#   <data>/venv/bin/python             (layout del plugin, creato da /youtube:setup → install.sh)
+#   <scripts/yt>/.venv/bin/python      (checkout di sviluppo con layout storico)
+# yt-config funziona anche senza venv (python3 di sistema: config.py usa solo la stdlib).
+set -euo pipefail
+
+self="$0"
+cmd="$(basename "$self")"
+src="$self"
+while [ -L "$src" ]; do
+  dir="$(cd -P "$(dirname "$src")" && pwd)"
+  src="$(readlink "$src")"
+  case "$src" in /*) ;; *) src="$dir/$src" ;; esac
+done
+YT_HOME="$(cd -P "$(dirname "$src")/.." && pwd)"
+# shellcheck source=_paths.sh
+. "$YT_HOME/bin/_paths.sh"
+
+data="$(yt_data_dir)"
+if [ -n "$data" ]; then
+  export YT_DATA="$data"
+  # bytecode Python nella data dir, mai dentro il plugin (la cache dei plugin resta com'è stata installata)
+  export PYTHONPYCACHEPREFIX="${PYTHONPYCACHEPREFIX:-$data/pycache}"
+  py="$data/venv/bin/python"
+  tv="$data/bin/thumbvision"
+  [ -x "$tv" ] || tv="$YT_HOME/bin/thumbvision"
+else
+  py="$YT_HOME/.venv/bin/python"
+  tv="$YT_HOME/bin/thumbvision"
+fi
+
+json_error() {  # messaggio → JSON su stdout (contratto dei comandi) + testo su stderr
+  local m="$1"
+  m="${m//\\/\\\\}"; m="${m//\"/\\\"}"
+  printf '{\n  "ok": false,\n  "error": "%s"\n}\n' "$m"
+  echo "$1" >&2
+}
+
+case "$cmd" in
+  thumbvision)
+    if [ ! -x "$tv" ]; then
+      json_error "thumbvision non disponibile ($tv): esegui /youtube:setup (oppure yt-install --yes)"
+      exit 3
+    fi
+    exec "$tv" "$@"
+    ;;
+  yt-*) ;;
+  *)
+    echo "uso: invocare tramite un symlink yt-<comando> (es. yt-doctor), non $cmd direttamente" >&2
+    exit 2
+    ;;
+esac
+
+mod="${cmd#yt-}"; mod="${mod//-/_}"
+script="$YT_HOME/lib/$mod.py"
+if [ ! -f "$script" ]; then
+  json_error "comando sconosciuto: $cmd (manca $script)"
+  exit 2
+fi
+
+if [ ! -x "$py" ]; then
+  if [ "$mod" = "config" ]; then
+    sys_py=/usr/bin/python3
+    [ -x "$sys_py" ] || sys_py="$(command -v python3 || true)"
+    if [ -n "$sys_py" ]; then
+      exec "$sys_py" -I -B "$script" "$@"
+    fi
+  fi
+  json_error "Toolkit non installato: manca il venv Python ($py). Esegui /youtube:setup (oppure yt-install --yes)."
+  exit 3
+fi
+exec "$py" "$script" "$@"

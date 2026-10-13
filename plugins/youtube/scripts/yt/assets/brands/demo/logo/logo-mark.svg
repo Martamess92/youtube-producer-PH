@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Segnaposto generico del brand «demo»: riquadro arrotondato con un triangolo «play». Sostituiscilo con il tuo logo. -->
+  <rect x="10" y="10" width="108" height="108" rx="28" fill="#15171c"/>
+  <path d="M52 40 L92 64 L52 88 Z" fill="#f4f1ea"/>
+</svg>

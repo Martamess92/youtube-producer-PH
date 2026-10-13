@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "brand": "demo",
+  "template": "single-camera-16x9",
+  "note": "Geometria generica: una sola camera a tutto quadro (nessun inset, nessun PiP). Per un master composito misura il tuo layout con `yt-clips layout --measure … --write` e salvalo nella cartella del tuo brand.",
+  "canvas": {"w": 3840, "h": 2160},
+  "wide": {
+    "x": 0, "y": 0, "w": 3840, "h": 2160, "r": 0,
+    "nx": 0.0, "ny": 0.0, "nw": 1.0, "nh": 1.0,
+    "people_cx": [0.25, 0.5, 0.75],
+    "people_cy": 0.3,
+    "people_note": "centri dei volti (frazioni della finestra, da sinistra) usati se thumbvision manca"
+  }
+}

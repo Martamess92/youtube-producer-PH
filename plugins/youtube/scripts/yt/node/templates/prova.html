@@ -1,0 +1,92 @@
+<!doctype html>
+<!-- prova «La prova» (thumbnail v2, telaio di serie; leva proof): l'artefatto REALE (schermata del prodotto, grafico, post)
+     autorizzato dall'ospite è il protagonista, come scheda inclinata a sinistra (mode card) oppure come ambiente
+     ingrandito, scurito e sfocato dietro tutto (mode ambient); l'ospite più piccolo a destra guarda la prova; titolo nel font
+     headline in alto a sinistra con la parola chiave nel box d'accento. Numeri nel gancio solo verificati (number_verified).
+     Telaio v2: targhetta, riga meta, simbolo o wordmark del brand, etichetta di formato. Senza artefatto il template non
+     rende (yt-thumb-render: «artifact» + «artifact_source»). Colori e font dai token del brand.
+     Spec: hook|text, highlight, accent, artifact {src,w,h}, artifact_mode (card|ambient), people [{role: guest, name, title}],
+     face_frac (default 0.32), face_cx, face_cy, keyword_style, meta_line, format_label, show_logo (default "symbol"),
+     guest_style, plate_src, card_top, card_tilt, hook_font. -->
+<html lang="it"><head><meta charset="utf-8">
+<style>
+  :root { --ink:#15171c; --paper:#f4f1ea; }
+  html, body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #frame { position:relative; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #plate { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; }
+  #veil { position:absolute; inset:0; z-index:3; pointer-events:none; }
+  .hero { position:absolute; filter: drop-shadow(0 24px 40px rgba(0,0,0,.5)); }
+  #card { position:absolute; z-index:5; border-radius:16px; overflow:hidden; background:var(--paper);
+    box-shadow: 0 0 0 6px var(--paper), 0 30px 60px rgba(0,0,0,.55), 0 8px 18px rgba(0,0,0,.35); }
+  #card img { display:block; width:100%; height:100%; object-fit:cover; object-position:top left; }
+</style></head>
+<body><div id="frame"><div id="plate"></div><div id="veil"></div></div>
+<!-- window.KIT (_common.js) è iniettato da render_html.mjs prima degli script della pagina -->
+<script>
+TT.ready(async (spec, T) => {
+  const C = KIT.C, rgba = KIT.rgba;
+  const frame = document.getElementById('frame');
+  const accent = KIT.accentName(spec.accent);
+  KIT.useAccent(accent);
+  if (!spec.artifact) throw new Error('prova: serve «artifact» (schermata o foto reale autorizzata)');
+  const mode = spec.artifact_mode || 'card';
+  const plate = document.getElementById('plate');
+  if (mode === 'ambient') {
+    plate.style.backgroundImage = `url("${spec.artifact.src}")`;
+    plate.style.filter = 'blur(6px) brightness(.38) saturate(.85)'; plate.style.inset = '-30px';
+  } else if (spec.plate_src) plate.style.backgroundImage = `url("${spec.plate_src}")`;
+  document.getElementById('veil').style.background = mode === 'ambient'
+    ? `linear-gradient(90deg, ${rgba(C.ink, 0.72)} 0%, ${rgba(C.ink, 0.45)} 45%, ${rgba(C.ink, 0.15)} 70%)`
+    : `radial-gradient(60% 80% at 30% 60%, ${rgba(C.paper, 0.06)}, ${rgba(C.paper, 0)} 70%)`;
+  KIT.grain(frame, { opacity: 0.12 });
+  const rectOf = KIT.rectOf;
+
+  const people = spec.people || [];
+  const g = people.find((p) => p.role === 'guest') || people[0];
+  let rec = null;
+  if (g) {
+    const w = KIT.wantFrac(g, spec, 0.32, [0.25, 0.36]);
+    const fr = KIT.capFrac(g, w.frac, spec).frac;
+    rec = await KIT.person(frame, g, spec, { faceFrac: w.frac, oneToOne: w.oneToOne, cx: (spec.face_cx ?? 0.80) * T.W, faceTop: (spec.face_cy ?? 0.40) * T.H - fr * T.H / 2, z: 10 });
+    if (spec.guest_style === 'graphic') {
+      KIT.glow(frame, rec, { color: C[accent], r: 10, blur: 18, opacity: 0.55, z: 7 });
+      KIT.outline(frame, rec, { color: C.paper, r: 7, z: 8 });
+    }
+  }
+  const logo = spec.show_logo === false ? null : spec.show_logo === 'wordmark'
+    ? KIT.wordmark(frame, { x: 40, y: 34, h: spec.logo_h || 54, dark: true, avoid: rec ? [rec] : [], text: spec.wordmark_text ?? null })
+    : KIT.showLogo(frame, { x: 40, y: 32, symbol: 50, dark: true, ep: spec.show_episode ? spec.episode : null, avoid: rec ? [rec] : [] });
+  const label = spec.format_label ? KIT.smallCaps(frame, spec.format_label, { right: T.zones.topRight.x - 14, y: 46, kind: 'label', size: 16, avoid: rec ? [rec] : [] }) : null;
+  // scheda: a sinistra della sagoma, sotto il titolo, inclinata; proporzioni dell'artefatto (max 16:10)
+  let cardRect = null;
+  if (mode === 'card') {
+    const card = T.el('div', '', frame); card.id = 'card';
+    await KIT.img(card, spec.artifact.src, 'art');
+    const ar = Math.max(1.0, Math.min(1.6, (spec.artifact.w || 1600) / (spec.artifact.h || 1000)));
+    const right = rec ? Math.min(T.silhouette(rec, 300, 640).left - 30, 800) : 820;
+    const w = Math.min(right - 70, 640), h = w / ar;
+    const x = 64, y = spec.card_top ?? 342;                 // la scheda può uscire dal bordo basso (taglio netto del quadro)
+    Object.assign(card.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', transform: `rotate(${spec.card_tilt ?? -3}deg)` });
+    cardRect = { x: x - 10, y: y - 10, w: w + 20, h: h + 20 };
+    KIT.report.notes.push(`artefatto: scheda ${w.toFixed(0)}×${h.toFixed(0)} px`);
+  }
+  // credenziale: accanto all'ospite, a sinistra della zona timestamp
+  const metaH = spec.meta_line ? 30 : 0;
+  let plateBox = null, meta = null;
+  if (g && g.name) {
+    const rightX = Math.min(T.zones.nogo.x - 14, rec.faceRect.x + rec.faceRect.w);
+    plateBox = KIT.namePlate(frame, g, { x: rightX, y: T.H - 62 - metaH - (g.title ? 98 : 58), accent, align: 'right', maxW: 480 });
+  }
+  if (spec.meta_line) {
+    // a destra, allineata alla zona del timestamp: la riga meta non ha fondo e non deve finire sulla scheda chiara
+    meta = KIT.smallCaps(frame, spec.meta_line, { right: T.zones.nogo.x - 10, y: T.H - 46, kind: 'meta', size: 17 });
+  }
+  const boxes = [cardRect, plateBox && plateBox.rect, meta && rectOf(meta), logo && logo.rect, label && rectOf(label)].filter(Boolean);
+  const hook = KIT.headline(frame, spec, { accent, keywordStyle: spec.keyword_style || 'box', align: 'left' });
+  const yMin = logo ? logo.rect.y + logo.rect.h + 8 : 64;
+  KIT.fitBetween(hook, { right: rec, x0: 44, yMin, yMax: cardRect ? cardRect.y - 6 : T.H - 70, gap: 26, min: 60, max: 220, maxLines: 2,
+    center: 0.27, boxes: boxes.filter((b) => b !== cardRect), align: 'left', bands: [160, 190, 220, 250] });
+  KIT.finish('prova', { accent, field: mode === 'ambient' ? 'artifact-ambient' : 'ink', artifact_mode: mode, grade: spec.grade || null,
+    guest_style: spec.guest_style || 'none' });
+});
+</script></body></html>

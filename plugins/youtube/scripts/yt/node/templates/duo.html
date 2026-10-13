@@ -1,0 +1,186 @@
+<!doctype html>
+<!-- duo (thumbnail v2, telaio di serie). Due persone testa-spalle ai lati, a filo dei bordi: l'ospite
+     a destra (dominante, guarda verso il centro), l'host a sinistra più in basso e tagliato dal bordo (una maglia chiara non
+     deve essere la massa più chiara). Grade (concept `grade`, default dal profilo, natural se non detto): natural = pixel
+     veri; mono = livello 2b, la stessa curva monocromatica su persone e plate (yt-thumb-render). Plate = la scena vera del
+     campo largo dell'episodio, senza persone (yt-portrait plate --fill columns), sfocata e scurita. Disco d'accento «di
+     campo» dietro l'ospite, tagliato dai bordi (può passare sotto le icone hover; mai nella zona del timestamp). Titolo
+     enorme e condensato (font headline del brand, default Anton; 3–4 parole, righe ≥ 20 % dell'altezza) tra le due teste,
+     punto finale nell'accento; targhetta dell'ospite (nome nel box d'accento + ruolo); etichetta piccola dell'host
+     («con <nome>»); riga meta in basso a sinistra; wordmark del brand in alto a sinistra; etichetta di formato in alto a
+     destra fuori dalla zona hover (inchiostro se cade sul disco). Un solo accento (accent: auto = scelto per contrasto).
+     Policy v2: disco, alone e contorno stanno SOTTO i ritagli (livello 1). Colori, font e wordmark dai token del brand.
+     Disposizione: le persone partono da left_cx 0,12 / right_cx 0,83 (host col volto a 0,50·H, ospite a 0,43·H) e una
+     ricerca le allarga verso i bordi (fino a ±4 % della larghezza) e abbassa l'host (fino a +6 % dell'altezza) solo quanto
+     serve perché ogni riga del titolo arrivi al 20,5 % (row_target); con left_cx/right_cx nel concept, o
+     layout_search: false, niente ricerca. Esito in metrics.series.layout.
+     Spec: hook|text, highlight (keyword), accent (un accento del brand | auto), people [sinistra, destra] {role, name, title},
+     face_frac, host_face_frac, left_cx, right_cx, face_cy (ospite), host_face_cy, layout_search, row_target, text_top,
+     circle_behind (guest|host|left|right|none), disc_k, disc_dx, disc_dy, keyword_style (none di default | box | bar),
+     text_align (left | center), text_gap, meta_line, format_label, show_logo (true | "wordmark" | "symbol" | false; default
+     wordmark), logo_h, wordmark_text, host_tag (testo | false; default «con <nome dell'host>»), guest_style (none|graphic),
+     plate_src, grade, hook_font ("display" = font display del brand). -->
+<html lang="it"><head><meta charset="utf-8">
+<style>
+  :root { --ink:#15171c; --paper:#f4f1ea; }
+  html, body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #frame { position:relative; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #plate { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; }
+  #light { position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .hero { position:absolute; filter: drop-shadow(0 18px 30px rgba(0,0,0,.30)); }
+</style></head>
+<body><div id="frame"><div id="plate"></div><div id="light"></div></div>
+<!-- window.KIT (_common.js) è iniettato da render_html.mjs prima degli script della pagina -->
+<script>
+TT.ready(async (spec, T) => {
+  const C = KIT.C, rgba = KIT.rgba;
+  const frame = document.getElementById('frame');
+  const accent = KIT.accentName(spec.accent);
+  KIT.useAccent(accent);
+  const plate = document.getElementById('plate');
+  if (spec.plate_src) {
+    plate.style.backgroundImage = `url("${spec.plate_src}")`;
+    await new Promise((r) => { const i = new Image(); i.onload = r; i.onerror = r; i.src = spec.plate_src; });
+  }
+  // luce (sotto le persone): un poco più chiaro dietro il titolo, bordi alto/basso verso l'inchiostro
+  document.getElementById('light').style.background =
+    `radial-gradient(48% 62% at 46% 40%, ${rgba(C.paper, spec.plate_src ? 0.06 : 0.08)}, ${rgba(C.paper, 0)} 70%),` +
+    `linear-gradient(180deg, ${rgba(C.ink, 0.30)} 0%, ${rgba(C.ink, 0)} 20%, ${rgba(C.ink, 0)} 72%, ${rgba(C.ink, 0.40)} 100%)`;
+  KIT.grain(frame, { opacity: 0.10 });
+
+  const people = (spec.people || []).slice(0, 2);
+  if (people.length < 2) throw new Error('duo: servono due persone (people: [sinistra, destra])');
+  // posizione di partenza: ospite col volto centrato a 0,43·H; host più in basso (0,50·H) e verso il bordo: la maglia esce
+  // dal fondo e dal lato, l'ospite resta la figura dominante
+  const want = spec.face_frac || 0.30;
+  const recs = [];
+  for (let i = 0; i < 2; i++) {
+    const p = people[i];
+    const isHost = p.role === 'host';
+    const w = isHost && spec.host_face_frac ? { frac: spec.host_face_frac, oneToOne: false } : KIT.wantFrac(p, spec, want, [0.26, 0.45]);
+    const cx = (i === 0 ? (spec.left_cx ?? 0.12) : (spec.right_cx ?? 0.83)) * T.W;
+    const cy = (isHost ? (spec.host_face_cy ?? 0.50) : (spec.face_cy ?? 0.43)) * T.H;
+    const fr = KIT.capFrac(p, w.frac, spec).frac;
+    recs.push(await KIT.person(frame, p, spec, { faceFrac: w.frac, oneToOne: w.oneToOne, cx, faceTop: cy - fr * T.H / 2, z: 10 + i }));
+  }
+  const [L, Rr] = recs;
+  const rectOf = KIT.rectOf;
+  const gi = people.findIndex((p) => p.role === 'guest');
+  const hi = people.findIndex((p) => p.role === 'host');
+  const gI = gi >= 0 ? gi : 1, hI = hi >= 0 ? hi : (gI === 0 ? 1 : 0);
+
+  // Etichetta di formato in alto a destra, fuori dalla zona hover (prima del disco: il disco la deve contenere tutta, così
+  // va in inchiostro sul cerchio; se non ci sta resta in carta fuori dal disco)
+  let label = null;
+  if (spec.format_label) label = KIT.smallCaps(frame, spec.format_label, { right: T.zones.topRight.x - 14, y: 44, kind: 'label', size: 15, tracking: '.17em' });
+  const lr = label ? rectOf(label) : null;
+  const logoH = spec.logo_h || 58;
+  const lmode = spec.show_logo === false ? null : (spec.show_logo === 'symbol' ? 'symbol' : 'wordmark');
+  const logoGuess = lmode ? { x: 40, y: 34, w: lmode === 'wordmark' ? KIT.wordmarkWidth(logoH, spec.wordmark_text ?? null) : 60, h: logoH } : null;
+
+  // Disco d'accento «di campo» dietro l'ospite (Ø ≈ 2,4–2,6 volti, centro spostato in alto e verso l'esterno, tagliato dal
+  // bordo alto e dal bordo laterale; può passare sotto le icone hover, mai nella zona del timestamp)
+  const cb = spec.circle_behind || 'guest';
+  const di = cb === 'none' ? -1 : cb === 'left' ? 0 : cb === 'right' ? 1 : cb === 'host' ? hI : gI;
+  const discFor = () => di < 0 ? null : KIT.solveDisc(recs[di], { side: di === 0 ? -1 : 1, k: spec.disc_k || 1.25, dx: spec.disc_dx ?? 0.55,
+    dy: spec.disc_dy ?? -0.45, kMin: 1.05, kMax: 1.5, avoid: [logoGuess].filter(Boolean), allowHover: true, contain: lr && di === 1 ? [lr] : [] });
+
+  // Titolo tra le due teste: font headline, interlinea stretta, punto finale nell'accento; 2–3 righe, il corpo più grande
+  const hook = KIT.headline(frame, spec, { accent, keywordStyle: spec.keyword_style || 'none', align: spec.text_align || 'left' });
+  const fitOpts = (circles, boxes) => ({ left: L, right: Rr, x0: 40, x1: 1240, yMin: spec.text_top ?? 44, yMax: T.H - 100, gap: spec.text_gap || 10,
+    min: 60, max: 260, maxLines: 3, center: spec.text_center || 0.40, circles, boxes, align: spec.text_align || 'left', preferFewer: 0.98,
+    bands: [300, 340, 380, 420, 460, 500, 540, 580] });
+  const discCircles = (d) => d ? [{ cx: d.cx, cy: d.cy, r: d.r + 2 }] : [];
+
+  // Ricerca della disposizione: le persone si allargano verso i bordi (e l'host scende) solo quanto serve perché ogni riga
+  // del titolo arrivi al 20,5 % dell'altezza (Anton: riga di maiuscole misurata = 0,875 em con gli occhielli di O, S, G);
+  // senza riuscirci, il titolo più grande.
+  const rowTarget = spec.row_target || 0.205;
+  const fontTarget = rowTarget * T.H / 0.875;
+  const fixed = spec.left_cx != null || spec.right_cx != null || spec.layout_search === false;
+  const cands = [];
+  for (const sp of [0, 0.01, 0.02, 0.03, 0.04]) for (const dr of [0, 0.02, 0.04, 0.06]) cands.push([sp, dr]);
+  cands.sort((a, b) => (1.5 * a[0] + a[1]) - (1.5 * b[0] + b[1]));
+  const offs = (sp, dr) => {
+    const o = [[0, 0], [0, 0]];
+    o[hI] = [Math.round((hI === 0 ? -1 : 1) * sp * T.W * 3) / 3, Math.round(dr * T.H * 3) / 3];
+    o[gI] = [Math.round((gI === 0 ? -1 : 1) * sp * T.W * 3) / 3, 0];
+    return o;
+  };
+  const faceInside = () => recs.every((r) => r.faceRect.x >= 4 && r.faceRect.x + r.faceRect.w <= T.W - 4 && r.faceRect.y + r.faceRect.h <= T.H - 60);
+  let chosen = null, best = null, tried = 0;
+  for (const [sp, dr] of (fixed ? [[0, 0]] : cands)) {
+    const o = offs(sp, dr);
+    recs.forEach((r, i) => KIT.moveRec(r, o[i][0], o[i][1]));
+    if (faceInside()) {
+      tried++;
+      const d = discFor();
+      const res = KIT.fitBetween(hook, fitOpts(discCircles(d), [logoGuess, lr].filter(Boolean)));
+      const size = res ? res.size : 0;
+      if (!best || size > best.size + 0.5) best = { sp, dr, size };
+      if (!chosen && size >= fontTarget) chosen = { sp, dr, size };
+    }
+    recs.forEach((r, i) => KIT.moveRec(r, -o[i][0], -o[i][1]));
+    if (chosen) break;
+  }
+  const pick = chosen || best || { sp: 0, dr: 0, size: 0 };
+  { const o = offs(pick.sp, pick.dr); recs.forEach((r, i) => KIT.moveRec(r, o[i][0], o[i][1])); }
+  KIT.report.layout = { spread: pick.sp, host_drop: pick.dr, font_px: +pick.size.toFixed(1), row_est: +(pick.size * 0.875 / T.H).toFixed(4),
+    row_target: rowTarget, reached: !!chosen, tried, fixed };
+  if (gi >= 0 && hi >= 0) KIT.report.dominance = { guest_face_frac: +(recs[gi].faceRect.h / T.H).toFixed(4), host_face_frac: +(recs[hi].faceRect.h / T.H).toFixed(4) };
+
+  // Wordmark del brand in alto a sinistra (default); "symbol" = solo il simbolo; false = niente
+  const logo = KIT.frameLogo(frame, spec, { x: 40, y: 34, h: logoH, dark: true, avoid: recs });
+  const circles = [];
+  let dsc = null;
+  if (di >= 0) {
+    const d = discFor();
+    if (d) {
+      KIT.disc(frame, { cx: d.cx, cy: d.cy, r: d.r, color: C[accent], z: 6, kind: 'disco-campo', field: true });
+      dsc = d; circles.push(...discCircles(d));
+    } else KIT.report.notes.push('disco: nessuna posizione valida (zona del timestamp / bordi)');
+  }
+  KIT.labelOnDisc(label, dsc);
+  const avoid = [logo && logo.rect, label && rectOf(label)].filter(Boolean);
+  const prop = spec.prop_obj ? await KIT.propSlot(frame, spec.prop_obj, recs[gi >= 0 ? gi : 1], { side: (gi >= 0 ? gi : 1) === 0 ? -1 : 1, z: 5 }) : null;
+  if (spec.guest_style === 'graphic') for (const r of recs) {
+    KIT.glow(frame, r, { color: C[accent], r: 10, blur: 18, opacity: 0.55, z: 7 });
+    KIT.outline(frame, r, { color: C.paper, r: 7, z: 8 });
+  }
+
+  // In basso: riga meta in basso a sinistra; sopra di lei l'etichetta dell'host quando l'host è a sinistra (tutte e due su
+  // una striscia d'inchiostro: sotto c'è la maglia); targhetta dell'ospite accanto a lui (nome nel box d'accento + ruolo),
+  // a sinistra della zona del timestamp se l'ospite è a destra.
+  const g = gI;
+  let plateBox = null, meta = null, htag = null;
+  const leftLight = hI === 0;                              // a sinistra in basso c'è il busto dell'host
+  if (spec.meta_line) {
+    if (g === 0 && people[g].name) meta = null;            // ospite a sinistra: la riga meta va sotto la sua targhetta (più giù)
+    else meta = KIT.smallCaps(frame, spec.meta_line, { x: 42, y: T.H - 34 - (leftLight ? 30 : 17), kind: 'meta', size: 16, strip: leftLight });
+  }
+  if (hi >= 0 && spec.host_tag !== false) {
+    const base = meta && hI === 0 ? rectOf(meta).y - 8 : T.H - 34;
+    htag = KIT.hostTag(frame, people[hi], { x: hI === 0 ? 42 : T.zones.nogo.x - 14, y: base - 33, align: hI === 0 ? 'left' : 'right',
+      text: typeof spec.host_tag === 'string' ? spec.host_tag : null });
+  }
+  if (people[g].name) {
+    const gRec = recs[g];
+    const nH = 58, rH = people[g].title ? 40 : 0;
+    if (g === 0) {
+      const mH = spec.meta_line ? 34 : 0;
+      plateBox = KIT.namePlate(frame, people[g], { x: 42, y: T.H - 30 - mH - nH - rH, accent, maxW: 560 });
+      if (spec.meta_line) meta = KIT.smallCaps(frame, spec.meta_line, { x: 44, y: T.H - 44, kind: 'meta', size: 17 });
+    } else {
+      const right = Math.min(T.zones.nogo.x - 14, gRec.faceRect.x + gRec.faceRect.w * 0.9);
+      plateBox = KIT.namePlate(frame, people[g], { x: right, y: T.H - 36 - nH - rH, accent, align: 'right', maxW: 600 });
+    }
+  }
+  const boxes = [plateBox && plateBox.rect, meta && rectOf(meta), htag && htag.rect, prop && prop.rect, ...avoid].filter(Boolean);
+
+  // titolo: adattamento finale con tutti gli ostacoli (targhetta, riga meta, etichetta dell'host, logo vero)
+  KIT.fitBetween(hook, fitOpts(circles, boxes));
+  KIT.finish('duo', { accent, field: spec.plate_src ? (spec.grade === 'mono' ? 'scene-mono' : 'scene') : 'ink', grade: spec.grade || null,
+    guest_style: spec.guest_style || 'none',
+    disc: dsc ? { cx: +dsc.cx.toFixed(1), cy: +dsc.cy.toFixed(1), r: +dsc.r.toFixed(1), color: C[accent] } : null });
+});
+</script></body></html>

@@ -1,0 +1,1 @@
+{"name":"youtube-producer-node","private":true,"description":"Renderer HTML→PNG (Playwright, Chrome di sistema)","devDependencies":{"playwright":"1.64.0"}}

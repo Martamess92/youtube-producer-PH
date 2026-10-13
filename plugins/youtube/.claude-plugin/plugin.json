@@ -1,0 +1,7 @@
+{
+  "name": "youtube",
+  "description": "YouTube Producer: strategist e producer YouTube per Claude Code. Fa strategia e audit di canale, ricerca degli outlier, storia e hook, montaggio long-form con FCPXML, sottotitoli, capitoli, Shorts, thumbnail con QA e review dei numeri. La pipeline gira in locale su Mac Apple Silicon (setup con /youtube:setup) e non pubblica mai nulla.",
+  "author": {
+    "name": "MikeIdeas2025"
+  }
+}

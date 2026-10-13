@@ -1,0 +1,16 @@
+{
+  "id": "mono-1",
+  "level": "2b",
+  "space": "luma709",
+  "ramp": ["ink", "paper"],
+  "keep_sat": 0.0,
+  "points": [[0.0, 0.0], [0.10, 0.02], [0.25, 0.10], [0.40, 0.25], [0.55, 0.48], [0.68, 0.67], [0.78, 0.745], [0.88, 0.775], [0.95, 0.785], [1.0, 0.79]],
+  "notes": [
+    "Ingresso: luma Rec.709 dei valori sRGB (0–1). Uscita: posizione 0–1 sulla rampa inchiostro → carta del brand (tokens.json).",
+    "Interpolazione monotona PCHIP tra i punti (lib/thumb_fx.py mono_curve): nessun rimbalzo, nessuna inversione di tono.",
+    "Neri profondi verso l'inchiostro; medi ripidi (pendenza ~1,5 tra luma 0,40 e 0,68: il dettaglio del volto nel file servito resta pari o sopra al colore); spalla lunga sopra 0,78: il bianco puro esce a 0,79 (L* ~81), così una maglia bianca resta sotto il titolo carta e sotto un cerchio d'accento chiaro.",
+    "Stessa curva su ogni pixel di tutte le persone e della plate; la plate può in più essere sfocata, scurita (ev prima della curva) e vignettata.",
+    "Mai ritocchi locali sui volti. Controlli: mappatura (≤ 2 livelli dalla curva analitica) e landmark MediaPipe (≤ 2 % della distanza tra gli occhi; sopra il 2 % solo se il grigio senza curva sposta già i punti).",
+    "LUT .cube per NLE: python3 lib/thumb_fx.py mono-lut --brand demo → mono-33.cube (il render usa la curva esatta)."
+  ]
+}

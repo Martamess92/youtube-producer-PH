@@ -1,0 +1,103 @@
+# YouTube Producer — tutto ciò che si genera o si installa resta fuori dal repo.
+# Le dipendenze vivono nella data dir del plugin (~/.claude/plugins/data/youtube-youtube-producer/),
+# le cartelle di lavoro in ~/youtube-studio (mai dentro il repo).
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (Playwright, Remotion, HyperFrames)
+node_modules/
+.remotion/
+plugins/youtube/scripts/yt/remotion/out/
+plugins/youtube/scripts/yt/remotion/build/
+.npm/
+
+# Build locali di thumbvision (il binario incluso scripts/yt/bin/thumbvision è versionato apposta)
+*.partial
+*.tmp
+.yt-lock-sha256
+.setup-ok
+
+# Media e output di lavoro (mai nel repo)
+*.mp4
+*.mov
+*.m4a
+*.wav
+*.mp3
+*.aac
+*.mkv
+*.webm
+*.prores
+*.fcpxml
+*.srt
+*.vtt
+*.ass
+out/
+renders/
+youtube-studio/
+
+# Segreti e token (non devono mai finire qui)
+secrets/
+client_secret*.json
+token-*.json
+api_key
+*.pem
+*.key
+.env
+.env.*
+config.yaml
+
+# Modelli
+*.bin
+*.onnx
+*.gguf
+
+# Varie
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Profili canale e glossari: vivono nei channels_dirs di ogni operatore (~/.config/youtube-producer/channels/),
+# mai nella repo. Qui resta solo il template.
+plugins/youtube/docs/yt/channels/*
+!plugins/youtube/docs/yt/channels/_template.md
+
+# Brand dei canali: vivono nei brands_dirs dell'operatore (~/.config/youtube-producer/brands/<slug>/), mai qui.
+# Nel toolkit c'è un solo brand (demo, neutro), un solo preset ASS (default) e i template thumbnail generici.
+# Un template o un preset GENERICO nuovo (senza l'identità di nessuno) va aggiunto con una riga «!» qui sotto, in una PR.
+plugins/youtube/scripts/yt/assets/brands/*
+!plugins/youtube/scripts/yt/assets/brands/demo/
+plugins/youtube/scripts/yt/assets/ass/*.json
+!plugins/youtube/scripts/yt/assets/ass/default.json
+plugins/youtube/scripts/yt/node/templates/*.html
+!plugins/youtube/scripts/yt/node/templates/duo.html
+!plugins/youtube/scripts/yt/node/templates/ritratto.html
+!plugins/youtube/scripts/yt/node/templates/scena.html
+!plugins/youtube/scripts/yt/node/templates/prova.html
+!plugins/youtube/scripts/yt/node/templates/generic.html
+
+# Archivio di ricerca (materiale personale): resta fuori, qui solo il README
+plugins/youtube/docs/yt/research/*
+!plugins/youtube/docs/yt/research/README.md
+
+# Log dei test di installazione pulita (locali)
+.test-logs/
+
+# Dati di apprendimento (yt-learn / yt-thumb-learn): restano nello studio_dir di ogni operatore, mai qui.
+# Coprono anche il caso di uno studio_dir messo per errore dentro la repo.
+*.db
+*.db-shm
+*.db-wal
+*.db.bak*
+learned/
+thumb-golden/
+proposals/
+learn-seed/
+refs/

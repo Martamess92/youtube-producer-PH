@@ -1,0 +1,30 @@
+{
+  "description": "YouTube Producer: guard.sh controlla i comandi Bash dell'agente youtube:producer (filtra su agent_type ed è fail-closed). All'avvio della sessione suggerisce /youtube:setup se il toolkit non è installato o va riallineato.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/yt/bin/guard.sh\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash \"${CLAUDE_PLUGIN_ROOT}/scripts/yt/bin/session-hint.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

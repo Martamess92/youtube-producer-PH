@@ -1,0 +1,73 @@
+<!doctype html>
+<!-- scena «La scena» (thumbnail v2, telaio di serie; claim sul set vero): pop-out dalla scena dell'ospite. Sotto il ritaglio
+     c'è lo STESSO frame da cui è stato tagliato (sorgente al tempo t, ROI di yt-portrait), allineato pixel su pixel, scurito
+     e sfocato da yt-thumb-render (livello 1 della policy v2: grafica attorno alla persona, volto intatto); una copia «cover»
+     molto sfocata riempie il resto del quadro; velo d'inchiostro dal lato del testo. Sopra: il ritaglio a piena luminosità
+     nella stessa posizione. Telaio v2: titolo nel font headline con parola chiave e punto d'accento, targhetta, riga meta,
+     simbolo o wordmark del brand, etichetta di formato. Colori e font dai token del brand.
+     Spec: hook|text, highlight, accent, people [{role: guest, name, title}], scene {src, crop, map} (da yt-thumb-render,
+     plate.source "scene" senza path), plate_src (ripiego: plate già graduata), face_frac (default 0.40), face_cx, face_cy,
+     keyword_style, meta_line, format_label, show_logo (default "symbol"), guest_style, veil (0–1, default 0.78),
+     text_center, hook_font. -->
+<html lang="it"><head><meta charset="utf-8">
+<style>
+  :root { --ink:#15171c; --paper:#f4f1ea; }
+  html, body { margin:0; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #frame { position:relative; width:1280px; height:720px; overflow:hidden; background:var(--ink); }
+  #plate { position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; }
+  #veil { position:absolute; inset:0; z-index:4; pointer-events:none; }
+  .hero { position:absolute; filter: drop-shadow(0 20px 36px rgba(0,0,0,.45)); }
+</style></head>
+<body><div id="frame"><div id="plate"></div><div id="veil"></div></div>
+<!-- window.KIT (_common.js) è iniettato da render_html.mjs prima degli script della pagina -->
+<script>
+TT.ready(async (spec, T) => {
+  const C = KIT.C, rgba = KIT.rgba;
+  const frame = document.getElementById('frame');
+  const accent = KIT.accentName(spec.accent);
+  KIT.useAccent(accent);
+  if (spec.plate_src && !spec.scene) {
+    document.getElementById('plate').style.backgroundImage = `url("${spec.plate_src}")`;
+    await new Promise((r) => { const i = new Image(); i.onload = r; i.onerror = r; i.src = spec.plate_src; });
+  }
+  const people = spec.people || [];
+  const g = people.find((p) => p.role === 'guest') || people[0];
+  if (!g) throw new Error('scena: serve l\'ospite');
+  const w = KIT.wantFrac(g, spec, 0.40, [0.34, 0.50]);
+  const fr = KIT.capFrac(g, w.frac, spec).frac;
+  const fcx = (spec.face_cx ?? 0.70) * T.W;
+  const rec = await KIT.person(frame, g, spec, { faceFrac: w.frac, oneToOne: w.oneToOne, cx: fcx, faceTop: (spec.face_cy ?? 0.43) * T.H - fr * T.H / 2, z: 10 });
+  if (spec.scene) {
+    const sc = await KIT.popout(frame, rec, spec.scene, { z: 1 });
+    // bordi della scena allineata dentro il quadro: sfumati nella copia «cover»
+    const L = parseFloat(sc.style.left), Wd = parseFloat(sc.style.width);
+    const fl = L > 0 ? Math.min(30, 160 / Wd * 100) : 0, frt = L + Wd < T.W ? Math.min(30, 160 / Wd * 100) : 0;
+    sc.style.webkitMaskImage = sc.style.maskImage = `linear-gradient(90deg, transparent 0%, #000 ${fl}%, #000 ${100 - frt}%, transparent 100%)`;
+  }
+  const veil = spec.veil ?? 0.78;
+  document.getElementById('veil').style.background =
+    `linear-gradient(90deg, ${rgba(C.ink, veil)} 0%, ${rgba(C.ink, veil * 0.92)} 34%, ${rgba(C.ink, veil * 0.35)} 56%, ${rgba(C.ink, 0)} 72%),` +
+    `linear-gradient(180deg, ${rgba(C.ink, 0.35)} 0%, ${rgba(C.ink, 0)} 25%, ${rgba(C.ink, 0)} 70%, ${rgba(C.ink, 0.45)} 100%)`;
+  KIT.grain(frame, { opacity: 0.10 });
+  const logo = spec.show_logo === false ? null : spec.show_logo === 'wordmark'
+    ? KIT.wordmark(frame, { x: 40, y: 34, h: spec.logo_h || 54, dark: true, avoid: [rec], text: spec.wordmark_text ?? null })
+    : KIT.showLogo(frame, { x: 40, y: 32, symbol: 50, dark: true, ep: spec.show_episode ? spec.episode : null, avoid: [rec] });
+  const label = spec.format_label ? KIT.smallCaps(frame, spec.format_label, { right: T.zones.topRight.x - 14, y: 46, kind: 'label', size: 16, avoid: [rec] }) : null;
+  const rectOf = KIT.rectOf;
+  const prop = spec.prop_obj ? await KIT.propSlot(frame, spec.prop_obj, rec, { side: 1, z: 5 }) : null;
+  if (spec.guest_style === 'graphic') {
+    KIT.glow(frame, rec, { color: C[accent], r: 10, blur: 18, opacity: 0.55, z: 7 });
+    KIT.outline(frame, rec, { color: C.paper, r: 7, z: 8 });
+  }
+  const metaH = spec.meta_line ? 30 : 0;
+  const plateBox = g.name ? KIT.namePlate(frame, g, { x: 44, y: T.H - 62 - metaH - (g.title ? 98 : 58), accent, maxW: 600 }) : null;
+  const meta = spec.meta_line ? KIT.smallCaps(frame, spec.meta_line, { x: 46, y: T.H - 46, kind: 'meta', size: 17 }) : null;
+  const boxes = [plateBox && plateBox.rect, meta && rectOf(meta), logo && logo.rect, label && rectOf(label), prop && prop.rect].filter(Boolean);
+  const hook = KIT.headline(frame, spec, { accent, keywordStyle: spec.keyword_style || 'box', align: 'left' });
+  const yMax = plateBox ? plateBox.rect.y - 18 : T.H - 70;
+  KIT.fitBetween(hook, { right: rec, x0: 44, yMin: 92, yMax, gap: spec.text_gap || 26, min: 60, max: 240, maxLines: 3,
+    center: spec.text_center || 0.40, boxes, align: 'left', bands: [260, 300, 340, 380, 420, 460, 500] });
+  KIT.finish('scena', { accent, field: spec.scene ? 'scene-popout' : (spec.plate_src ? 'plate' : 'ink'), grade: spec.grade || null,
+    guest_style: spec.guest_style || 'none' });
+});
+</script></body></html>

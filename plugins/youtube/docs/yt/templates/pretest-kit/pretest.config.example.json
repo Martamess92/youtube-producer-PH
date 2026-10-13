@@ -1,0 +1,66 @@
+{
+  "study_id": "caffe-maker-ep12-pretest-espressione",
+  "show_name": "Il Caffè dei Maker",
+  "topic": "tecnologia, startup o business",
+  "_note": "Esempio. I percorsi relativi partono dalla cartella di questo file. Un braccio ha role control. Il feed vuole esattamente 8 vicini (copertine di altri canali, mai nella repo). Dopo ogni modifica: build_kit.py --config <questo file>.",
+  "arms": [
+    {"id": "A", "role": "control", "label": "A1 intenso", "file": "../renders/slug_A1.jpg", "template": "ritratto", "lever": "claim", "text": "Il codice non bastava."},
+    {"id": "B", "role": "candidate", "label": "A2 sorriso", "file": "../renders/slug_A2.jpg", "template": "ritratto", "lever": "claim", "text": "Il codice non bastava."}
+  ],
+  "pairs": [["B", "A"]],
+  "primary_pairs": [["B", "A"]],
+  "neighbours": [
+    {"id": "n1", "label": "canale 1", "file": "../grid/n1.jpg"},
+    {"id": "n2", "label": "canale 2", "file": "../grid/n2.jpg"},
+    {"id": "n3", "label": "canale 3", "file": "../grid/n3.jpg"},
+    {"id": "n4", "label": "canale 4", "file": "../grid/n4.jpg"},
+    {"id": "n5", "label": "canale 5", "file": "../grid/n5.jpg"},
+    {"id": "n6", "label": "canale 6", "file": "../grid/n6.jpg"},
+    {"id": "n7", "label": "canale 7", "file": "../grid/n7.jpg"},
+    {"id": "n8", "label": "canale 8", "file": "../grid/n8.jpg"}
+  ],
+  "feed": {"enabled": true, "exposure_ms": 3000, "fixation_ms": 800, "tile_max_px": 360, "tile_min_px": 220, "themes": ["dark", "light"]},
+  "promise": {"exposure_ms": 3000, "tile_px": 360},
+  "h2h": {"tile_px": 360, "title": null},
+  "image": {"width": 720, "height": 405, "quality": 82},
+  "min_viewport": {"w": 1000, "h": 620},
+  "sink": {"type": "google_form", "form_action": "", "fields": {"record": "", "pid": "", "arm": ""}},
+  "prolific": {"completion_url": ""},
+  "analysis": {
+    "alpha": 0.05,
+    "primary_correction": "holm",
+    "min_total_s": 25,
+    "exclude_knows_show": true,
+    "chance": 0.1111,
+    "exposure_window_ms": [2500, 3700],
+    "test_pid_prefixes": ["TEST"],
+    "promise_codes": {
+      "codes": {
+        "T2": "la promessa completa del concept (azione + oggetto), es. per vendere un prodotto non basta saper programmare",
+        "T1": "solo una parte della promessa, es. il codice o la programmazione senza l'idea di vendere",
+        "S": "storia generica di startup, founder o business",
+        "X": "altro, non so, vuoto"
+      },
+      "per_arm": {
+        "A": {"giusta": ["T2"], "parziale": ["T1", "S"]},
+        "B": {"giusta": ["T2"], "parziale": ["T1", "S"]}
+      }
+    },
+    "audience_codes": {
+      "codes": {
+        "F": "founder, startupper, chi crea o lancia prodotti digitali, builder, sviluppatori",
+        "P": "pubblico tech o business generico",
+        "X": "altro, tutti, non so"
+      },
+      "rules": {"giusta": ["F"], "parziale": ["P"]}
+    }
+  },
+  "log": {
+    "channel": "caffe-maker",
+    "video_id": "",
+    "variable": "classe d'espressione (intenso contro sorriso)",
+    "panel": "prolific",
+    "neighbours_option": "a",
+    "guest_ok": "<data dell'OK dell'ospite>"
+  }
+}
